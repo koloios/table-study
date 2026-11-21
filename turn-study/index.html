@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#123f35"><title>Table Study · One hand of Hold’em</title>
+<style>
+:root{--ink:#172f29;--sub:#4e665e;--paper:#f5f6f0;--line:#cbd4c8;--green:#103f35;--lime:#e3f692;--red:#af3c42;font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--paper)}*{box-sizing:border-box}body{margin:0}button,summary{cursor:pointer;font:inherit}button{touch-action:manipulation}button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #ba771b;outline-offset:3px}button{color:inherit}.wrap{max-width:1240px;margin:auto;padding:0 clamp(16px,4vw,58px)}header{height:72px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:11px;font-weight:720;font-size:20px;letter-spacing:-.05em}.mark{width:30px;height:34px;background:var(--green);border-radius:5px;transform:rotate(-8deg);color:var(--lime);display:grid;place-items:center;font:23px Georgia}.minor,small,.kicker,.street,.pot,.index,.stat b,.cards{font-variant-numeric:tabular-nums}.minor{font-size:14px;color:var(--sub)}h1,h2,.stat b{font-family:"Iowan Old Style","Baskerville",Georgia,serif;font-weight:500}h1{font-size:clamp(37px,5vw,66px);letter-spacing:-.055em;margin:23px 0 15px;line-height:1.04}.nav{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 23px}.nav button{border:0;background:transparent;padding:8px 12px;border-radius:30px;color:var(--sub);font-size:14px}.nav button[aria-current=step]{background:var(--ink);color:white}.index{font-size:12px;opacity:.8;margin-right:5px}.layout{display:grid;grid-template-columns:minmax(0,1.63fr) minmax(295px,1fr);gap:22px;align-items:start}.stage{background:radial-gradient(ellipse at 40% 25%,#225a49,#103e34 75%);color:#fff;border-radius:18px;position:relative;height:468px;overflow:hidden;border:1px solid #113b32}.stage:before{content:"";position:absolute;inset:72px 8% 83px;border:1px solid #a4bba255;box-shadow:0 0 0 6px #d7edbf09,inset 0 0 0 6px #d7edbf07;border-radius:150px;pointer-events:none}.stageHead{position:absolute;top:18px;left:21px;right:21px;display:flex;justify-content:space-between;align-items:center}.street,.kicker,.tag{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}.pot{border:1px solid #729582;border-radius:25px;padding:5px 11px;font-size:13px}.seat{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;min-width:66px;transform:translate(-50%,-50%)}.seat.top{left:50%;top:21%}.seat.left{left:13%;top:50%}.seat.right{left:87%;top:50%}.seat.bottom{left:50%;top:80%}.seat .who{padding:4px 8px;border-radius:12px;background:#144134;border:1px solid #7c9c86;font-weight:630;font-size:14px}.who i{font:700 11px system-ui;background:#dbe6d5;color:#173d32;border-radius:6px;padding:2px 4px;margin-right:4px}.seat.active .who{background:var(--lime);border-color:var(--lime);color:#193b29}.seat small{font-size:12px;color:#e1ebdf}.folded{opacity:.55}.cards{display:flex;justify-content:center;align-items:center;gap:4px}.card,.blank{width:42px;height:60px;border-radius:6px;display:flex;flex-direction:column;justify-content:center;align-items:center;line-height:1.02}.card{background:#fffdf4;color:#152e28;box-shadow:0 2px 5px #0003;font:bold 23px Georgia}.card em{font:18px Georgia}.card.red{color:var(--red)}.blank{border:1px dashed #8dad937f;background:#ffffff04}.back{width:20px;height:27px;border:1px solid #b1c3ad;border-radius:3px;background:repeating-linear-gradient(45deg,#53745f 0px,#53745f 2px,#375c49 2px,#375c49 5px);transform:rotate(-9deg)}.back+.back{transform:rotate(8deg);margin-left:-8px}.board{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);text-align:center}.board .tag{color:#d5e3d7;display:block;margin-bottom:9px;font-size:10px}.coach{min-height:468px;background:#fffef9;border:1px solid var(--line);border-radius:18px;padding:clamp(21px,2.6vw,36px);display:flex;flex-direction:column}.kicker{color:#526b59}.coach h2{font-size:clamp(30px,3.4vw,44px);letter-spacing:-.045em;line-height:1.05;margin:16px 0 11px}.coach p{margin:0 0 14px;font-size:16px;line-height:1.5}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.btn{border:1px solid var(--line);border-radius:9px;background:white;padding:10px 14px;font-weight:620;font-size:15px}.btn:hover{background:#eff3e7}.btn.main{background:var(--lime);border-color:#b3c977}.btn.chosen{background:#234c3b;color:white;border-color:#234c3b}.feedback{margin-top:12px;color:#34533e;line-height:1.45;font-size:15px}.feedback:empty{display:none}.foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:auto;padding-top:12px;font-size:13px;color:var(--sub)}.foot button{background:none;border:0;padding:5px;color:inherit}.foot button:disabled{opacity:.35}.content{flex:1;padding-bottom:18px}details{border-bottom:1px solid var(--line);padding:17px 2px}.under{margin-bottom:30px}summary{font-size:15px;font-weight:650}details p,details li{max-width:780px;font-size:15px;line-height:1.6;color:var(--sub)}a{color:var(--green)}.stat{background:#eff4e9;border-radius:10px;padding:12px 14px;margin:12px 0}.stat b{font-size:29px}.stat small{display:block;line-height:1.5;color:var(--sub)}.track{height:8px;background:#c5d3c1;border-radius:6px;position:relative;margin:9px 0}.track span{display:block;background:#34694e;height:100%;border-radius:6px}.track i{position:absolute;left:20.45455%;height:16px;width:2px;background:#4c301f;top:-4px}.picks{display:flex;gap:6px;margin:5px 0 12px}.picks button{flex:1}.stageBottom{position:absolute;left:15px;bottom:13px;color:#d4e6d8;font-size:12px}.riverCard{outline:2px solid #d3e98d;outline-offset:2px}.flashes{display:flex;flex-wrap:wrap;gap:3px;margin:8px 0}.flashes i{width:11px;height:11px;border-radius:3px;background:#c6d2c1}.flashes i.hit{background:#984146}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}@media(max-width:790px){.layout{grid-template-columns:1fr}.stage{height:392px}.coach{min-height:0}.nav{gap:1px}.nav button{padding:7px 8px}.wrap{max-width:680px}.stage:before{inset:60px 9%}.foot{margin-top:4px}}@media(max-width:430px){header{height:54px}.nav button{font-size:13px}.nav{margin-bottom:14px}.index{display:none}.stage{height:340px}.card,.blank{width:29px;height:43px}.card{font-size:18px}.card em{font-size:14px}.seat .who{font-size:12px;padding:3px 5px}.seat small{font-size:11px}.cards{gap:3px}.stageHead{left:14px;right:14px;top:12px}.board .tag{font-size:9px}.seat.left{left:12%}.seat.right{left:88%}.stageBottom{font-size:11px}}
+
+.work{margin-top:16px;border-top:1px solid var(--line);border-bottom:0;padding:11px 0 0}.work summary{color:var(--green)}.work ol{padding-left:22px}.work li,.syllabus li{margin:10px 0}.work strong{font-variant-numeric:tabular-nums}.syllabus em{font-style:normal;font-weight:650}.syllabus em:after{content:" · "}.syllabus{max-width:850px}#map-link{text-underline-offset:4px}#course-map{scroll-margin:16px}
+</style></head><body><div class="wrap"><header><div class="brand"><span class="mark" aria-hidden="true">♠</span>Table Study</div><a class="minor" id="map-link" href="../index.html#home">Return to Foundations</a></header><main><h1>One hand of Hold’em</h1><nav class="nav" aria-label="Lesson chapters" id="nav"></nav><div class="layout"><section id="table" class="stage" aria-label="Four-seat poker table"></section><section class="coach" aria-label="Lesson coach"><div class="content" id="lesson"></div><div class="foot"><button id="back">Back a step</button><span id="progress"></span></div></section></div><div class="under"><details id="dealer-practice"><summary>Live table practice · Deal a hand</summary>
+<p>Take a 52-card deck and mark four seats. Put the dealer button at your seat and set out a 1-chip small blind and a 2-chip big blind clockwise from you. Play along with the prompts. Assume at least two players stay in through showdown.</p>
+<div id="dealer-drill"></div>
+<p><a href="https://www.pokerstars.com/poker/learn/news/how-to-deal-a-poker-hand/">PokerStars Learn · Dealing at a home game</a></p>
+</details><details id="course-map"><summary>Hold’em Foundations</summary><p>This coached hand brings together the table order, showdowns, drawing odds and call prices from the course. Try an independent decision after the guided hand.</p><p><a href="../index.html#home">Open the course map</a> · <a href="../index.html#review">Return to the review lesson</a></p></details><details><summary>Design references</summary><p>The hand and practice sequence were written for this prototype. PokerStars Learn informs the selection of table skills, MIT’s poker lectures connect bets to pot odds, and Seeing Theory inspired the repeated sampling exercise.</p><p><a href="https://www.pokerstars.com/poker/learn/course/the-basics/">PokerStars Learn · Basics</a> · <a href="https://ocw.mit.edu/courses/15-s50-poker-theory-and-analytics-january-iap-2015/resources/lecture-notes/">MIT · Poker Theory and Analytics</a> · <a href="https://seeing-theory.brown.edu/basic-probability/index.html">Seeing Theory · Basic Probability</a></p></details></div></main></div>
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const chapters=['Table order','Count the draw','Price the call','River lab'];
+const starts=[0,6,8,10];
+const suits=['♥','♠','♦','♣'], ranks=Array.from('23456789TJQKA');
+const hand=['8♥','7♥'], board=['K♥','2♠','4♥','J♣'], aces=['A♣','A♦'];
+const pool=suits.flatMap(s=>ranks.map(r=>r+s)).filter(c=>![...hand,...board,...aces].includes(c));
+let countPart=0,beat=0,step=0,price=2,decision='',river='',hits=0,trials=0,recent=[],history=[],prediction=null;
+const titles=['Who acts first?','Follow the chips','Your blind is live','Who opens the flop?','A bet comes back','See one more card','One river left','Count the winning rivers','Is the call worth it?','Your decision','Deal the river again','A new seat assignment'];
+const chapter=()=>starts.filter(v=>step>=v).length-1;
+function btn(label,cmd,kind=''){return '<button class="btn '+kind+'" data-cmd="'+cmd+'">'+label+'</button>'}
+function card(c,extra=''){if(!c)return '<span class="blank"></span>';let s=c.slice(-1),r=c[0]==='T'?'10':c[0];return '<span class="card '+('♥♦'.includes(s)?'red ':'')+extra+'" aria-label="'+r+' of '+({'♥':'hearts','♠':'spades','♦':'diamonds','♣':'clubs'}[s])+'">'+r+'<em>'+s+'</em></span>'}
+const backs='<span class="back"></span><span class="back"></span>';
+function seat(name,pos,role,label,contents,active,fold){return '<div class="seat '+pos+(active?' active':'')+(fold?' folded':'')+'"><div class="cards">'+contents+'</div><span class="who">'+(role?'<i>'+role+'</i>':'')+name+'</span><small>'+label+'</small></div>'}
+function pot(){if(step===11)return 3;if(step===0)return 3;if(step<=4)return step===1?(beat===2?5:3):6;if(step===5)return 9;if(step<8)return 12;return step===9&&decision==='Call'?12+2*price:12+price}
+function table(){
+const fresh=step===11, post=step>=3&&!fresh, turn=step>=6&&!fresh, reveal=step>=7&&!fresh;
+const street=fresh?'Next hand':step<3?'Before the flop':step<6?'Flop':step<9?'Turn':step===9?'Result':'River experiment';
+let cards=post?board.slice(0,turn?4:3):[];if((step===9&&decision==='Call')||step===10&&trials&&river)cards.push(river);
+let seats=seat('Mira','top',fresh?'':'D',fresh?'Holding cards':step===1&&beat===2?'Called 2':step>=8?'All-in '+price:step===5?'Bet 3':step>=2?'Called 2':'Dealer button',reveal?aces.map(c=>card(c)).join(''):backs,step===1&&beat===1,false)+
+seat('Sol','right',fresh?'D':'SB',fresh?'Dealer button':step>=5?'Folded':step>=2?'In for 2':'Posted 1',fresh||step<5?backs:'',step===1&&beat===2,!fresh&&step>=5)+
+seat('You','bottom',fresh?'SB':'BB',fresh?'Posted 1':step===9?decision==='Call'?'Called '+price:'Folded':step===10?'River practice':step===5?'Facing 3':step>=6?'Checked':step===4?'Your action':step===2?'Your action':'Posted 2',fresh?backs:hand.map(c=>card(c)).join(''),[2,4,5,8].includes(step),false)+
+seat('Ivo','left',fresh?'BB':'',fresh?'Posted 2':step>=2||step===1&&beat>0?'Folded':'Holding cards',fresh||step<1||step===1&&beat===0?backs:'',step===1&&beat===0,!fresh&&(step>=2||step===1&&beat>0));
+$('#table').innerHTML='<div class="stageHead"><span class="street">'+street+'</span><span class="pot">Pot · '+(step===10?'12 before bet':pot())+'</span></div><div class="board"><span class="tag">Community cards</span><div class="cards">'+Array.from({length:5},(_,i)=>card(cards[i],i===4?'riverCard':'')).join('')+'</div></div>'+seats+'<div class="stageBottom">Blinds 1 / 2 · Play chips</div>'}
+const knownCards = [...hand, ...board, ...aces];
+const winningRivers = pool.filter(c => c.endsWith('♥'));
+const winChance = winningRivers.length / pool.length;
+function percent(fraction) { return (fraction * 100).toFixed(1) + '%'; }
+function working(label, lines, explanation, expanded) {
+  return '<details class="work" data-step="'+step+'" '+(expanded?'open':'')+'><summary>'+label+'</summary><ol>'+
+    lines.map(line => '<li>'+line+'</li>').join('')+'</ol><p>'+explanation+'</p></details>';
+}
+function mathForStep(expanded) {
+  if (step === 7 && countPart === 2) {
+    return working('What if Mira kept her cards hidden?', [
+      'With only your two cards and the four on the board visible, 46 card identities are unknown. You can still see four hearts, so 9 remain.',
+      'Using only those six visible cards, the chance to complete your flush is <strong>9 ÷ 46 ≈ '+percent(9/46)+'</strong>.',
+      'Revealing two non-hearts removes two possible misses. The chance rises to <strong>9 ÷ 44 ≈ '+percent(winChance)+'</strong>.'
+    ], 'Against these exposed aces every heart wins. With her hand hidden, winning also depends on what Mira holds. For example, A♥ Q♥ would make a higher flush on a heart river.', expanded);
+  }
+  if (step === 8) {
+    const finalPot = 12 + 2 * price;
+    return working('Work through the call price', [
+      'Start with 12 in the middle. Mira adds '+price+' and your call adds '+price+'. The final pot is <strong>12 + '+price+' + '+price+' = '+finalPot+'</strong>.',
+      'Imagine paying for 100 calls at this price. They cost <strong>100 × '+price+' = '+(100*price)+' chips</strong>. Each win returns the full '+finalPot+', including your call.',
+      'To recover that cost, you need an average of <strong>'+(100*price)+' ÷ '+finalPot+' ≈ '+(100*price/finalPot).toFixed(1)+' wins per 100</strong>. Your cards give you about '+(100*winChance).toFixed(1)+' wins per 100.'
+    ], 'This comparison assumes one opponent, no fees, and no further betting because Mira is all-in. Chips you put in earlier belong to the pot.', expanded);
+  }
+  if (step === 9) {
+    const netWin = 12 + price, misses = pool.length - winningRivers.length;
+    const gain = winningRivers.length * netWin - misses * price;
+    return working('Calculate the average chip gain', [
+      'List each of the '+pool.length+' possible rivers once. Each has the same chance. On '+winningRivers.length+' hearts, a call gains '+netWin+' chips net. The other '+misses+' rivers each cost '+price+'.',
+      'Add the gains and losses: <strong>9 × '+netWin+' − 35 × '+price+' = '+gain+' chips</strong> across the list.',
+      'Divide by the number of possible rivers: <strong>'+gain+' ÷ 44 ≈ '+(gain/44).toFixed(2)+' chips per call</strong>. This average is the expected value of calling.'
+    ], 'Folding adds zero chips from this point. In a single played hand you receive one of the two outcomes. The average describes repeated decisions at the same price.', expanded);
+  }
+  if (step === 10 && prediction !== null) {
+    const n = trials || 10;
+    const observed = trials ? 'Your sample has <strong>'+hits+' ÷ '+trials+' × 100 = '+percent(hits/trials)+'</strong> flushes. ' : '';
+    return working('Explain the sample', [
+      'Expected count = number of trials × chance per trial. For '+n+' rivers this gives <strong>'+n+' × 9/44 ≈ '+(n*winChance).toFixed(1)+' flushes</strong>. The average across batches can be fractional.',
+      observed+'Each deal resets to the same 44 possibilities. A miss leaves the next deal with the same 9/44 chance.',
+      'Missing once has probability 35/44. Missing all ten independent deals has probability <strong>(35/44)¹⁰ ≈ '+percent((1-winChance)**10)+'</strong>. Even ten misses are plausible.'
+    ], 'Larger samples usually have less percentage variation. Any particular extra batch can still move the observed rate farther from the expected rate.', expanded);
+  }
+  return '';
+}
+function render(){
+const expanded = document.querySelector('.work[open]')?.dataset.step === String(step);
+const ch=chapter();$('#nav').innerHTML=chapters.map((v,i)=>'<button data-cmd="jump'+i+'" '+(i===ch?'aria-current="step"':'')+'><span class="index">0'+(i+1)+'</span>'+v+'</button>').join('');
+table();let body='',actions='';
+const next=(label)=>btn(label,'next','main'),opts=(list)=>list.map(([label,key])=>btn(label,key)).join('');
+switch(step){
+case 0:body='Before the deal, Sol puts in 1 chip and you put in 2. These automatic bets are the small blind (SB) and big blind (BB). Mira holds the dealer button (D). Before any shared cards appear, the first player clockwise from the big blind acts. Who is it?';actions=opts([['Mira','wrongMira'],['You','wrongYou'],['Ivo','correct']]);break;
+case 1:body='Ivo acts first. He folds, giving up his cards and his chance to win this pot.';if(beat===1)body='Mira is next. She calls, putting in 2 chips to match your big blind.';if(beat===2)body='Sol already posted 1 chip. She adds just 1 more to match the 2-chip bet. Who still has a turn?';actions=btn(['Watch Ivo fold','Watch Mira call 2','Watch Sol add 1'][beat], 'advanceSeat','main');break;
+case 2:body='The action reaches you. Your 2 chips already match the bet. You can check (stay in for free) or raise. For this hand, check to see the first three shared cards.';actions=next('Check');break;
+case 3:body='These three cards are the flop. From here on, each round starts with the first player still in the hand clockwise from the dealer button. Who acts first now?';actions=opts([['Sol','correct'],['You','wrongFlop'],['Mira','wrongFlop']]);break;
+case 4:body='Sol checks. It’s your turn. You hold two hearts, and there are two more on the table. Five hearts would make a flush. Check to see what Mira does.';actions=next('Check');break;
+case 5:body='Mira bets 3, and Sol folds. The action comes back to you because Mira put in chips after you checked. In this walkthrough, call her 3. That brings the pot to 12.';actions=next('Call 3 and see the turn');break;
+case 6:body='The fourth shared card is a club. You check, and Mira will bet her remaining chips. Before choosing a price, turn her cards face up for this exercise. Now you can work out exactly which rivers win.';actions=next('Reveal Mira’s cards');break;
+case 7:body='Mira holds two aces. A single 7 or 8 still loses to her pair. A heart gives you a flush and beats her on this board. There are 13 hearts in the deck. You can see four. How many winning hearts remain?';actions=opts([['4 hearts','wrongCount'],['9 hearts','countNine'],['13 hearts','wrongCount']]);
+if(countPart===1){
+  body='Nine hearts win. To turn a count into a probability, count every card that could be the river. You see your two cards, the four on the board, and Mira’s two exposed aces. How many card identities are still unknown?';
+  actions=opts([['42 cards','wrongPool'],['44 cards','countPool'],['46 cards','wrongPool']]);
+} else if(countPart===2){
+  body='There are <b>13 − 4 = 9</b> hearts left. Those are your outs, the cards that turn this losing hand into a winner. There are <b>52 − '+knownCards.length+' = '+pool.length+'</b> unseen cards. Unseen cards in folded hands count here because you don’t know their identities.';
+  body+='</p><div class="stat"><small>Winning rivers ÷ possible rivers</small><b>9 / 44 = '+percent(winChance)+'</b><small>Rounded to one decimal place</small></div><p>Each unseen card is equally likely to be the river in this deal. Dividing 9 by 44 gives 0.2045… Multiply by 100 to express that share as a percent.';
+  actions=next('Use that chance to price a call');
+}break;
+case 8:body='You know eight cards: your two, Mira’s two, and four on the board. Of the 44 unseen cards, 9 win for you (20.5%). Mira goes all-in. Pick her bet size and decide whether to call.';body+='</p><div class="picks">'+[2,8].map(v=>btn(v+' chips','price'+v,price===v?'chosen':'')).join('')+'</div><div class="stat"><small>Call '+price+' to contest a final pot of '+(12+2*price)+'</small><b>'+((100*price)/(12+2*price)).toFixed(1)+'%</b><small>Wins needed to break even · call ÷ final pot</small></div><p>';actions=btn('Fold','fold')+btn('Call '+price,'call','main');break;
+case 9:{const edge=9/44*(12+2*price)-price,good=(decision==='Call')===(edge>0);
+body=(decision==='Fold'?'You folded. Mira takes the '+(12+price)+' chips in the pot.':river.endsWith('♥')?'A heart! Your flush takes the '+(12+2*price)+'-chip pot.':'This river misses. Mira’s aces take the '+(12+2*price)+'-chip pot.')+' '+(good?'Your choice earns more on average at this price.': 'At this price, '+(edge>0?'calling':'folding')+' earns more on average.')+' Calling costs '+price+' each time and returns '+(12+2*price)+' on 9 of 44 rivers. Its average gain from this decision is '+(edge>0?'+':'−')+Math.abs(edge).toFixed(2)+' chips. Folding adds 0.';actions=btn('Try the other price','other')+next('Test with repeated rivers');break}
+case 10:body='Keep both hands and the four shared cards fixed. Each trial draws one of the 44 unseen cards, then puts it back for the next trial. How many flushes do you expect in 100 rivers?';
+if(prediction===null){actions=opts([['About 5','guess5'],['About 20','guess20'],['About 50','guess50']]);}
+else{body='You predicted about '+prediction+' flushes per 100. The deck gives 9 ÷ 44, or about 20.5 per 100. Deal a small batch, then a larger one. How far does your observed rate move from the mark?';body+='</p><div class="stat"><small>Observed flushes</small><b>'+hits+' / '+trials+'</b><div class="track"><span style="width:'+(trials?100*hits/trials:0)+'%"></span><i></i></div><small>'+(trials?(100*hits/trials).toFixed(1)+'% observed':'No trials yet')+' · mark = 20.5% expected</small></div>'+(recent.length?'<div class="flashes" aria-hidden="true">'+recent.map(v=>'<i class="'+(v?'hit':'')+'"></i>').join('')+'</div><small>Latest '+recent.length+' rivers · red = heart</small>':'')+'<p>';actions=btn('Deal 10','sim10','main')+btn('Deal 100','sim100')+(trials?next('Move the button'):'');}break;
+case 11:body='Same four seats, fresh practice stacks. The button has moved clockwise from Mira to Sol. You post the small blind, and Ivo posts the big blind. Before the flop, whose turn comes first?';actions=opts([['Mira','finish'],['You','wrongNext'],['Sol','wrongNext']]);break}
+$('#lesson').innerHTML='<div class="kicker">Guided hand / '+chapters[ch]+'</div><h2>'+titles[step]+'</h2><p>'+body+'</p><div class="actions">'+actions+'</div><div class="feedback" role="status" id="feedback"></div>'+mathForStep(expanded);
+$('#progress').textContent='Step '+(step+1)+' of '+titles.length;$('#back').disabled=!history.length}
+function snapshot(){return {step,countPart,beat,price,decision,river,hits,trials,recent:recent.slice(),prediction}}
+function go(n){history.push(snapshot());step=n;if(n===7)countPart=0;if(n===1)beat=0;render()}
+function draw(){return pool[Math.floor(Math.random()*pool.length)]}
+function feedback(s){$('#feedback').textContent=s}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-cmd]');if(!b)return;const c=b.dataset.cmd;
+if(c.startsWith('jump')){const n=starts[Number(c.slice(4))];if(n!==step)go(n);return}
+if(c==='countNine'||c==='countPool'){history.push(snapshot());countPart=c==='countNine'?1:2;render();return}
+if(c.startsWith('wrong')){feedback(({wrongMira:'Mira has the button. Start at your BB marker and move one seat clockwise.',wrongYou:'Your big blind starts the pot. The player on your left gets the first decision.',wrongFlop:'Start at Mira’s dealer button and move clockwise to the first player still holding cards.',wrongPool:'Start with 52 cards. Subtract only those you can identify: 2 + 4 + 2. The folded cards are face down.',wrongCount:'Count the two hearts in your hand and the two on the board. Subtract those four from 13.',wrongNext:'Find Ivo’s BB marker. Move one seat clockwise from Ivo.'})[c]);return}
+if(c==='finish'){$('#lesson .actions').innerHTML=btn('Replay the hand','restart','main')+btn('Return to river lab','jump3')+'<a class="btn" href="../index.html#review">Return to Foundations</a>';feedback('Exactly. Mira acts first. You followed a full hand, priced a draw, and used repeated deals to test its probability.');return}
+if(c==='advanceSeat'){if(beat===2){go(2)}else{history.push(snapshot());beat++;render()}return}
+if(c==='restart'){step=0;countPart=0;beat=0;history=[];price=2;decision='';river='';hits=trials=0;recent=[];prediction=null;render();return}
+if(c==='next'||c==='correct'){go(step+1);return}
+if(c.startsWith('price')){price=Number(c.slice(5));render();return}
+if(c==='call'||c==='fold'){history.push(snapshot());decision=c==='call'?'Call':'Fold';river=decision==='Call'?draw():'';step=9;render();return}
+if(c==='other'){history.push(snapshot());price=price===2?8:2;river='';step=8;render();return}
+if(c.startsWith('guess')){prediction=Number(c.slice(5));river='';render();return}
+if(c.startsWith('sim')){for(let i=0;i<Number(c.slice(3));i++){river=draw();const hit=river.endsWith('♥');hits+=Number(hit);trials++;recent.push(hit);if(recent.length>24)recent.shift()}render();feedback('Dealt '+c.slice(3)+' rivers. '+hits+' flushes in '+trials+' trials.');return}
+});
+// The physical-deck prompts progress separately from the simulated player hand.
+const dealerPrompts = [
+  ['Shuffle on the table', 'Split the face-down deck into two roughly equal packets. Rest them on the table with the inner corners close. Lift those corners slightly with your thumbs and release small groups from each side so they interleave. Push the packets together and square the edges. Repeat the shuffle several times, keeping the faces hidden.', ['I’ve shuffled'], 0],
+  ['Cut the deck', 'Offer the squared deck for a cut. Practising alone, lift a packet from the top, set it beside the remainder, then place the remainder on top of it. Keep the deck face down. Who receives the first card at this four-seat table?', ['Dealer button', 'Small blind', 'Big blind'], 1, 'Start one seat clockwise from the button. That seat posted the small blind.'],
+  ['Deal the private cards', 'Give each player one face-down card clockwise, beginning at the small blind. Make a second lap in the same order. Each seat now has two cards. Wait for preflop betting to finish. What comes next?', ['Burn one face down', 'Turn over three cards'], 0, 'Take the top card off face down before revealing the flop.'],
+  ['Deal the flop', 'Place the top card face down in a separate burn pile. Turn the next three cards face up together. Wait for flop betting to close. What do you do before revealing the turn?', ['Burn one face down', 'Shuffle the remaining cards'], 0, 'The deck stays in order. Take one new burn card from the top.'],
+  ['Deal the turn', 'Burn the next card face down. Reveal one shared card beside the flop. Wait for turn betting to close. How do you deal the river?', ['Reveal one immediately', 'Burn one, reveal one', 'Burn three, reveal one'], 1, 'Each new street gets one burn card. The river adds one shared card.'],
+  ['Account for the cards', 'Burn one face down and reveal the river. Five cards are on the board, eight are at the four seats, and three are in the burn pile. After the final betting round, compare the remaining hands and award the pot. Why did the unseen burn cards count in the probability lesson?', ['Their identities were unknown', 'They can return to the board'], 0, 'A burned card stays out of play. From your seat, any unseen identity might occupy the river position.'],
+  ['Pass the button', 'Check your physical deck: 8 private cards + 5 board cards + 3 burns leaves 36 in the stub. Gather all 52, move the button one seat clockwise, and deal again. For the second deal, cover these instructions and say each step aloud.', ['Practice again'], 0]
+];
+let dealerStep = 0;
+function renderDealer() {
+  const [title, prompt, choices] = dealerPrompts[dealerStep];
+  document.querySelector('#dealer-drill').innerHTML =
+    '<div class="stat"><small>Dealer practice · '+(dealerStep+1)+' of '+dealerPrompts.length+'</small><b>'+title+'</b></div>'+
+    '<p>'+prompt+'</p><div class="actions">'+choices.map((choice,i)=>
+      '<button class="btn" data-deal-choice="'+i+'">'+choice+'</button>').join('')+
+    '</div><div class="feedback" id="dealer-feedback" role="status"></div>';
+}
+document.querySelector('#dealer-drill').addEventListener('click', event => {
+  const choice = event.target.closest('[data-deal-choice]');
+  if (!choice) return;
+  const [, , , answer, hint] = dealerPrompts[dealerStep];
+  if (Number(choice.dataset.dealChoice) !== answer) {
+    document.querySelector('#dealer-feedback').textContent = hint;
+    return;
+  }
+  dealerStep = (dealerStep + 1) % dealerPrompts.length;
+  renderDealer();
+  document.querySelector('#dealer-drill button').focus({preventScroll:true});
+});
+renderDealer();
+if(location.hash === '#dealer-practice') document.querySelector('#dealer-practice').open = true;
+if(new URLSearchParams(location.search).get('course')==='review') $('#map-link').href='../index.html#review';
+$('#back').onclick=()=>{const s=history.pop();if(!s)return;({step,countPart,beat,price,decision,river,hits,trials,recent,prediction}=s);render()};
+render();
+</script></body></html>
