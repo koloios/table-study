@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const context = vm.createContext({});
-for (const file of ['poker.js', 'lessons.js']) {
+for (const file of ['poker.js', 'lessons.js', 'practice.js']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../assets', file), 'utf8'), context);
 }
 const poker = vm.runInContext('Poker', context);
@@ -45,4 +45,26 @@ for (let seed = 0; seed < 60; seed++) {
     }
   }
 }
-console.log('Foundations checks passed.');
+const practice = vm.runInContext('Practice', context);
+for(let seed=0;seed<24;seed++){
+  const prices=course.units.at(-1).build(seed).filter(s=>s.quote);
+  assert.equal(prices.length,2);
+  assert.equal(prices.find(s=>s.bet===8).answer,'Call');
+  assert.equal(prices.find(s=>s.bet===4).answer,'Fold');
+  assert.equal(prices[0].bet, seed%2 ? 4 : 8);
+  for(const skill of Object.keys(practice.skills)){
+    const s=practice.build(skill,seed);
+    if(s.choices) assert(s.choices.includes(s.answer));
+    if(s.visual.deal){
+      const {you,opp,board}=s.visual.deal;
+      assert.equal(new Set([...you,...opp,...board]).size,you.length+opp.length+board.length);
+    }
+  }
+}
+for(const n of [10,100]){
+  let total=0;
+  for(let wins=0;wins<=n;wins++) total+=practice.batchProbability(n,wins,9/44);
+  assert(Math.abs(total-1)<1e-12);
+}
+assert.equal((100*practice.batchProbability(10,0,9/44)).toFixed(1),'10.1');
+console.log('Foundations and targeted practice checks passed.');

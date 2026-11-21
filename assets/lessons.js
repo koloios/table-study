@@ -29,7 +29,7 @@ const Course = (() => {
       ask('Who opens the betting?','Everyone receives two private cards. These belong only to that player. Before the flop (the first three shared cards), the player clockwise from the big blind acts first. Trace that route on the table.',table(0,'Hand 1 · Before the flop',3),names,'Ivo','Ivo can fold, call 2, or raise. If everyone folds, the big blind wins the pot straight away.','Find your BB badge, then move one seat clockwise.'),
       read('Follow a round of betting','Ivo folds. Mira calls 2, Sol adds 1 to match, and you check because your big blind already covers the price. All players still in have matched 2. The dealer can reveal the three-card flop.',table(0,'Hand 1 · Preflop complete',6,3),'See who acts on the flop'),
       ask('Who acts after the flop?','Each later round starts at the first remaining player clockwise from the button. At your turn you can check when there is no bet to match, or open the betting yourself.',table(0,'Hand 1 · Flop',6,3),names,'Sol','Sol is the small blind and still holds cards. If she checks, you act next. The turn and river each bring one further board card and a new betting round.','Start from Mira’s dealer button this time.'),
-      ask('The button moves','Hand 2 starts with Sol on the button. Which opening bet do you post now?',table(1,'Hand 2 · Blinds',3),['None','Small blind · 1','Big blind · 2'],'Small blind · 1','Your chair stays put as the roles rotate.','Look one seat clockwise from Sol.'),
+      ask('The button moves','Hand 2 starts with Sol on the button. Which opening bet do you post now?',{...table(1,'Hand 2 · Blinds',3),hideYourRole:true},['None','Small blind · 1','Big blind · 2'],'Small blind · 1','Your chair stays put as the roles rotate.','Look one seat clockwise from Sol.'),
       ask('Play from the button','On hand 3 you have the button. Ivo has the small blind and Mira the big blind. Who acts before you preflop?',table(2,'Hand 3 · Before the flop',3),names,'Sol','Sol acts first. You get to see that decision before making yours.','Find Mira and move one seat clockwise.'),
       ask('Finish the orbit','Hand 4 gives Ivo the button. Who is first to act preflop?',table(3,'Hand 4 · Before the flop',3),names,'You','All four positions have now passed your seat.','Start from the big blind and move clockwise.'),
       ask('Read a fresh deal','A new hand begins. Identify the first player before the flop.',table(checkpointButton,'New hand · Before the flop',3),names,names[first],'The first preflop decision belongs to the seat clockwise from the big blind.','Locate the two forced bets before choosing a seat.',true),
@@ -79,18 +79,30 @@ const Course = (() => {
     return [
       ask('Predict a batch','With one river to come you win 9/44 of the time. If we reset the same turn and draw 44 separate rivers, how many wins should we expect on average?',cards(base),['Exactly 44','About 9','About 35'],'About 9','Expected count = 44 × 9/44 = 9. Individual batches can land above or below nine.','Multiply the number of trials by the win probability.'),
       {...read('Try the river experiment','Deal 10 rivers and look at the observed rate. Then add 100. Every trial starts again with all 44 possibilities. The vertical mark shows the calculated 20.5% chance.',cards(base,{lab:true}),'Explain the result'),lab:true},
-      ask('Can ten misses be ordinary?','A miss has probability 35/44. In ten independent trials, what is the chance that every trial misses?',cards(base),['Zero after four misses','(35/44)¹⁰','10 × (35/44)'],'(35/44)¹⁰','Multiply the ten independent miss probabilities: about 10.1%. Even a profitable call can lose ten times in a row.','Every reset leaves the next river with the same chance to miss.'),
+      ask('Could a batch miss every time?','A miss has probability 35/44. In ten independent trials, what is the chance that every trial misses?',cards(base),['Zero after four misses','(35/44)¹⁰','10 × (35/44)'],'(35/44)¹⁰','Multiply the ten independent miss probabilities: about 10.1%. Even a profitable call can lose ten times in a row.','Every reset leaves the next river with the same chance to miss.'),
       ask('Predict another sample','You reset this exact hand before each of '+n+' river deals. How many wins would you expect on average?',cards(base),numericChoices(expect,[9*(n/44+1),Math.round(n/2)]),String(expect),n+' × 9/44 = '+expect+' expected wins. The observed count can differ.','Scale the nine expected wins per 44 trials to the new sample size.',true),
-      ask('The next river','You saw three misses in a row in the lab. What is the chance of a heart on the next reset?',cards(base),['9 / 44','9 / 41','A heart is due'],'9 / 44','The lab restores every card between trials. Drawing several cards from one deck without replacing them would be a different experiment.','Check whether the missed cards stay out of the deck.',true)
+      ask('The next river','When you reset the deck for the next trial, what is the chance of a heart?',cards(base),['9 / 44','9 / 41','A heart is due'],'9 / 44','The lab restores every card between trials. Drawing several cards from one deck without replacing them would be a different experiment.','Check whether the missed cards stay out of the deck.',true)
     ];
   }
   function review(seed) {
-    const fresh=changeSuits(blocked,seed%4), low=[3,4,5,3][seed%4], pot=[24,32,40,28][seed%4], high=pot/2;
+    const fresh=changeSuits(base,seed%4);
+    const scenarios=[{pot:40,bet:8},{pot:8,bet:4}];
+    if(seed%2) scenarios.reverse();
+    const decisions=scenarios.map(({pot,bet},i)=>{
+      const quote=Poker.callPrice(pot,bet,9/44);
+      return {
+        ...ask(i===0?'Choose your line':'Try the other pot',
+          'The pot begins at '+pot+' chips. Mira bets her last '+bet+'. You can see both hands and have nine winning rivers out of 44. Pick an action, then show how you priced it.',
+          cards(fresh), ['Call','Fold'], quote.ev>0?'Call':'Fold',
+          'Your chance to win is '+pct(9/44)+'. A '+bet+'-chip call needs '+bet+' ÷ '+quote.finalPot+' = '+pct(quote.breakEven)+' wins to break even. Calling averages '+quote.ev.toFixed(2)+' chips. Folding adds zero.',
+          'Include the starting pot, Mira’s bet and your call.',true),
+        quote, pot, bet
+      };
+    });
     return [
-      {...read('Play the whole hand','Take the big blind, follow the other seats, then count and price a river draw. The guided table opens in this tab. Use “Return to Foundations” when you are ready for a fresh decision.',cards(base),'Continue to the independent hand'),guided:true},
-      ask('A new river decision','You face the two exposed aces. The pot was '+pot+' before Mira went all-in for '+low+'. Call or fold?',cards(fresh),['Call','Fold'],'Call','Eight rivers win out of 44. Your '+low+'-chip call needs '+pct(low/(pot+2*low))+' wins, below 18.2%.','Count the remaining flush cards and build the final pot.',true),
-      ask('Replay at a new price','The cards are identical. This time Mira bets '+high+' into '+pot+'. Which decision has the higher expected value?',cards(fresh),['Call','Fold'],'Fold','Your chance stays 8/44. Betting half the existing pot asks you to win 25% of the time.','Compare 8/44 with the cost of calling divided by the final pot.',true),
-      ask('Explain the reversal','What would you tell another player about those two decisions?',cards(fresh),['Mira’s bigger bet removed outs','The price changed; the winning rivers stayed the same','My first river predicted my next one'],'The price changed; the winning rivers stayed the same','Your explanation uses information available when the decision was made. A lucky river could never make an overpriced call profitable on average.','Separate what changed in the deck from what changed in the pot.',true)
+      {...read('Play the whole hand','Take the big blind, follow the other seats, then count and price a river draw. Return to Foundations when you are ready for a fresh decision.',cards(base),'Continue to the independent hand'),guided:true},
+      ...decisions,
+      ask('Explain the reversal','Why is paying 8 chips profitable in one deal while paying 4 loses chips on average in the other?',cards(fresh),['The bigger bet creates more outs','The 8-chip call costs a smaller fraction of its final pot','A cheap call always wins less often'],'The 8-chip call costs a smaller fraction of its final pot','You paid 8 for a final pot of 56, or 4 for a final pot of 16. The cards gave you the same chance in both deals.','Compare each call with its own final pot.',true)
     ];
   }
   const units=[
