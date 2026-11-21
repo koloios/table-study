@@ -87,8 +87,23 @@
     document.title='Courses · Table Study';
     app.innerHTML=`<section class="intro"><span class="over">Course library</span><h1>Choose your game</h1><p>Take a seat on your own. Learn the rhythm of a hand, then explore the decisions and probabilities behind it.</p></section>
       <div class="catalog"><section class="felt track-card"><span class="over">Six playable lessons</span><h2>Texas Hold’em</h2>
-      <p>Follow the button, read your hand and discover what a call is worth.</p><a class="btn main" href="#holdem">Enter Hold’em Foundations</a></section>
+      <p>Follow the button, read your hand and discover what a call is worth.</p><a class="btn main" href="#holdem">Enter Hold’em Foundations</a>
+      <a class="track-preview" href="#intermediate">Preview Intermediate Hold’em</a></section>
       <section class="paper track-card"><span class="over">Planned course</span><h2>Contract bridge</h2><p>Follow suit, read your partner’s play and learn what a contract asks you to do.</p><a class="btn" href="#bridge">Preview Bridge Foundations</a></section></div>`;
+  }
+  function intermediate() {
+    document.title='Intermediate Hold’em · Course preview';
+    app.innerHTML=`<section class="intro"><span class="over">Texas Hold’em / Planned course</span>
+      <h1>Intermediate Hold’em</h1><p>For players who can already count outs and price a call. This course is in planning.</p></section>
+      <div class="grid"><section class="paper"><h2>Planned topics</h2><ol class="bridge-map">
+      <li><strong>Opponent ranges.</strong> Compare plausible holdings and weight them to estimate your chance of winning.</li>
+      <li><strong>Position and stack depth.</strong> Replay a starting hand from different seats and with different stacks.</li>
+      <li><strong>Two cards to come.</strong> Explore turn and river combinations, including cards that improve both hands.</li>
+      <li><strong>Bet sizing and later streets.</strong> Choose a size, anticipate a response, and revisit your plan on a new board card.</li></ol></section>
+      <aside class="felt"><span class="over">First lesson idea</span><h2>What could Mira hold?</h2>
+      <p>You hold 8♥ 7♥ on K♥ 2♠ 4♥ J♣. Against A♣ A♦, a heart on the river wins. Against A♥ Q♥, that same heart gives Mira the higher flush.</p>
+      <p>The planned exercise lets you change how likely each holding is and see when a call becomes worthwhile.</p></aside></div>
+      <p class="gameLinks"><a href="#holdem">Go to Hold’em Foundations</a></p>`;
   }
   function bridge() {
     document.title='Bridge Foundations · Course preview';
@@ -129,7 +144,7 @@
       const state=saved[u.id];
       return '<li><a href="#'+u.id+'"><span class="num">0'+(i+1)+'</span><span><strong>'+u.title+'</strong><span class="desc">'+u.goal+'</span></span><small>'+(state?.done?'Complete':state?.at?'Resume':'')+'</small></a></li>';
     }).join('');
-    app.innerHTML='<section class="intro"><span class="over">Self-paced course</span><h1>Hold’em Foundations</h1><p>Take a seat, play through a hand, and learn how to decide whether a call is worth its price.</p></section><div class="grid"><div>'+table({street:'Your first table',button:0,pot:3})+'<div class="gameLinks"><a class="btn main" href="#'+resume.id+'">'+(count===units.length?'Revisit':saved[resume.id]?.at?'Resume':'Start')+' · '+resume.title+'</a></div></div><section class="paper"><span class="over">Course map</span><h2>At the table</h2><p class="note">'+count+' of '+units.length+' lessons complete · saved in this browser</p><ol class="map">'+rows+'</ol></section></div><details><summary>Practice with a real deck</summary><p>Use a 52-card deck alongside a seven-step exercise in shuffling, cutting, dealing and burning cards.</p><a href="turn-study/index.html#dealer-practice">Open the dealer exercise</a></details><details><summary>Next level · Intermediate Hold’em</summary><p>Intermediate Hold’em will use hidden ranges, changing board textures and multi-street decisions. This track is planned.</p></details>';
+    app.innerHTML='<section class="intro"><span class="over">Self-paced course</span><h1>Hold’em Foundations</h1><p>Take a seat, play through a hand, and learn how to decide whether a call is worth its price.</p></section><div class="grid"><div>'+table({street:'Your first table',button:0,pot:3})+'<div class="gameLinks"><a class="btn main" href="#'+resume.id+'">'+(count===units.length?'Revisit':saved[resume.id]?.at?'Resume':'Start')+' · '+resume.title+'</a></div></div><section class="paper"><span class="over">Course map</span><h2>At the table</h2><p class="note">'+count+' of '+units.length+' lessons complete · saved in this browser</p><ol class="map">'+rows+'</ol></section></div><details><summary>Practice with a real deck</summary><p>Use a 52-card deck alongside a seven-step exercise in shuffling, cutting, dealing and burning cards.</p><a href="turn-study/index.html#dealer-practice">Open the dealer exercise</a></details><p class="gameLinks"><a href="#intermediate">Preview the next course · Intermediate Hold’em</a></p>';
     app.insertAdjacentHTML('beforeend',retryList());
     document.title='Table Study · Hold’em Foundations';
   }
@@ -179,6 +194,7 @@
     nav.textContent=unit?'Course map':'Courses';nav.href=unit?'#holdem':'#library';
     if(!unit){
       if(page==='bridge')bridge();
+      else if(page==='intermediate')intermediate();
       else if(page==='holdem'||page==='home'||page.startsWith('practice/'))home();
       else library();
       return;

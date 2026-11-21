@@ -611,6 +611,7 @@ summary {
 .track-card h2 { margin: 12px 0; }
 .track-card p { max-width: 35ch; margin-bottom: 26px; }
 .track-card .btn { margin-top: auto; }
+.track-preview { margin-top: 14px; }
 .bridge-map { padding-left: 1.5em; }
 .bridge-map li { padding: 8px 0 8px 4px; }
 .retry-list { margin-top: 20px; }

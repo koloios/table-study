@@ -19,7 +19,7 @@ Each unit has a worked example before the independent task. Wrong answers explai
 
 ## Later courses
 
-**Intermediate Hold’em** will cover preflop ranges by position and stack depth, two-card draws, dirty outs, weighted opponent ranges, board texture, bet sizing and multi-street plans. Its assessment will use unseen deals with hidden opponents and ask the learner to justify a line before the outcome. **Bridge** is a planned separate course, beginning with following suit, taking tricks and partnership play.
+[Intermediate Hold’em course preview](https://koloios.github.io/table-study/#intermediate) covers the planned topics of preflop ranges by position and stack depth, two-card draws, dirty outs, weighted opponent ranges, board texture, bet sizing and multi-street plans. Its assessment will use unseen deals with hidden opponents and ask the learner to justify a line before the outcome. **Bridge** is a planned separate course, beginning with following suit, taking tricks and partnership play.
 
 ## Running the site
 
