@@ -14,10 +14,10 @@
     }
     return saved[id];
   }
-  let retrySkill='',retryFailed=false,decision='',batch=null;
+  let retrySkill='',retryFailed=false,decision='',potConfirmed=false,batch=null;
   let unit,steps=[],entry,feedback='',correct=false,selected=[],river='',bet=2,sample=[];
   function resetStep() {
-    feedback='';correct=false;selected=[];river='';bet=2;sample=[];decision='';batch=null;
+    feedback='';correct=false;selected=[];river='';bet=2;sample=[];decision='';potConfirmed=false;batch=null;
   }
   function activeStep(){
     const step=steps[entry.at];
@@ -88,6 +88,7 @@
     app.innerHTML=`<section class="intro"><span class="over">Course library</span><h1>Choose your game</h1><p>Take a seat on your own. Learn the rhythm of a hand, then explore the decisions and probabilities behind it.</p></section>
       <div class="catalog"><section class="felt track-card"><span class="over">Six playable lessons</span><h2>Texas Hold’em</h2>
       <p>Follow the button, read your hand and discover what a call is worth.</p><a class="btn main" href="#holdem">Enter Hold’em Foundations</a>
+      <a class="track-preview" href="#table">Play at the Practice Table</a>
       <a class="track-preview" href="#intermediate">Preview Intermediate Hold’em</a></section>
       <section class="paper track-card"><span class="over">Planned course</span><h2>Contract bridge</h2><p>Follow suit, read your partner’s play and learn what a contract asks you to do.</p><a class="btn" href="#bridge">Preview Bridge Foundations</a></section></div>`;
   }
@@ -103,7 +104,7 @@
       <aside class="felt"><span class="over">First lesson idea</span><h2>What could Mira hold?</h2>
       <p>You hold 8♥ 7♥ on K♥ 2♠ 4♥ J♣. Against A♣ A♦, a heart on the river wins. Against A♥ Q♥, that same heart gives Mira the higher flush.</p>
       <p>The planned exercise lets you change how likely each holding is and see when a call becomes worthwhile.</p></aside></div>
-      <p class="gameLinks"><a href="#holdem">Go to Hold’em Foundations</a></p>`;
+      <p class="gameLinks"><a class="btn main" href="#table/river">Try the river bluff lab</a> <a class="btn" href="#holdem">Go to Hold’em Foundations</a></p>`;
   }
   function bridge() {
     document.title='Bridge Foundations · Course preview';
@@ -145,12 +146,12 @@
       return '<li><a href="#'+u.id+'"><span class="num">0'+(i+1)+'</span><span><strong>'+u.title+'</strong><span class="desc">'+u.goal+'</span></span><small>'+(state?.done?'Complete':state?.at?'Resume':'')+'</small></a></li>';
     }).join('');
     app.innerHTML='<section class="intro"><span class="over">Self-paced course</span><h1>Hold’em Foundations</h1><p>Take a seat, play through a hand, and learn how to decide whether a call is worth its price.</p></section><div class="grid"><div>'+table({street:'Your first table',button:0,pot:3})+'<div class="gameLinks"><a class="btn main" href="#'+resume.id+'">'+(count===units.length?'Revisit':saved[resume.id]?.at?'Resume':'Start')+' · '+resume.title+'</a></div></div><section class="paper"><span class="over">Course map</span><h2>At the table</h2><p class="note">'+count+' of '+units.length+' lessons complete · saved in this browser</p><ol class="map">'+rows+'</ol></section></div><details><summary>Practice with a real deck</summary><p>Use a 52-card deck alongside a seven-step exercise in shuffling, cutting, dealing and burning cards.</p><a href="turn-study/index.html#dealer-practice">Open the dealer exercise</a></details><p class="gameLinks"><a href="#intermediate">Preview the next course · Intermediate Hold’em</a></p>';
-    app.insertAdjacentHTML('beforeend',retryList());
+    app.insertAdjacentHTML('beforeend','<p class="gameLinks"><a class="btn" href="#table">Play at the Practice Table</a></p>'+retryList());
     document.title='Table Study · Hold’em Foundations';
   }
   function completion() {
     const idx=units.indexOf(unit),next=units[idx+1];
-    return '<div class="intro"><span class="over">Lesson complete</span><h1>'+unit.title+'</h1><p>'+unit.goal+'</p></div><div class="paper"><h2>'+(next?'Keep your seat':'Review your progress')+'</h2><p>'+(next?'Your progress is saved. The next lesson is '+next.title.toLowerCase()+'.':units.every(u=>saved[u.id]?.done)?'You’ve completed Hold’em Foundations. On another day, revisit the checkpoints and explain your decisions before revealing the feedback.':'You finished the review hand. The course map shows which other lessons are ready to practise.')+'</p><div class="actions">'+(next?'<a class="btn main" href="#'+next.id+'">Next · '+next.title+'</a>':'<a class="btn main" href="#home">Course map</a>')+btn('Practise this lesson again','repeat')+'</div></div>';
+    return '<div class="intro"><span class="over">Lesson complete</span><h1>'+unit.title+'</h1><p>'+unit.goal+'</p></div><div class="paper"><h2>'+(next?'Keep your seat':'Review your progress')+'</h2><p>'+(next?'Your progress is saved. The next lesson is '+next.title.toLowerCase()+'.':units.every(u=>saved[u.id]?.done)?'You’ve completed Hold’em Foundations. On another day, revisit the checkpoints and explain your decisions before revealing the feedback.':'You finished the review hand. The course map shows which other lessons are ready to practise.')+'</p><div class="actions">'+(next?'<a class="btn main" href="#'+next.id+'">Next · '+next.title+'</a>':'<a class="btn main" href="#table">Play at the Practice Table</a> <a class="btn" href="#home">Course map</a>')+btn('Practise this lesson again','repeat')+'</div></div>';
   }
   function renderLesson() {
     document.title=unit.title+' · Table Study';
@@ -193,7 +194,8 @@
     }
     nav.textContent=unit?'Course map':'Courses';nav.href=unit?'#holdem':'#library';
     if(!unit){
-      if(page==='bridge')bridge();
+      if(['table','table/river','table/slumbot'].includes(page)) PracticeTable.mount(app,page,card);
+      else if(page==='bridge')bridge();
       else if(page==='intermediate')intermediate();
       else if(page==='holdem'||page==='home'||page.startsWith('practice/'))home();
       else library();
@@ -218,18 +220,29 @@
     const focus=Array.from(buttons).find(b=>b.dataset.action===action && (value===undefined||b.dataset.value===value));
     focus?.focus({preventScroll:true});
   }
+  function gradeReviewDecision(s) {
+    correct=decision===s.answer;
+    const potWork=s.pot+' + '+s.bet+' + '+s.bet+' = '+s.quote.finalPot+' chips. ';
+    if(correct) feedback=potWork+s.explain;
+    else {
+      decision='';
+      feedback=potWork+'Your pot calculation is right. Compare the price of '+pct(s.quote.breakEven)+' with your chance of winning, then choose again.';
+    }
+    renderWithFocus(correct?'next':'answer');
+  }
   app.addEventListener('click',event=>{
     const b=event.target.closest('button[data-action]');if(!b||!unit)return;
     const action=b.dataset.action,value=b.dataset.value;
     if(action==='fresh'){route();return;}
     if(action==='repeat'){entry.seed++;entry.at=0;store();route();return;}
     const s=activeStep();if(!s)return;
-    if(action==='next'){next();return;}
+    if(action==='next'){if(!s.quote || correct)next();return;}
     if(action==='back'){entry.at=Math.max(0,entry.at-1);store();resetStep();renderLesson();return;}
     if(action==='answer'){
       if(s.quote){
         decision=value;
         if(value!==s.answer)noteMistake();
+        if(potConfirmed){gradeReviewDecision(s);return;}
         feedback='';renderWithFocus('final-pot',String(s.pot));return;
       }
       correct=value===s.answer;
@@ -242,10 +255,10 @@
       renderWithFocus(correct?'next':'answer',correct?undefined:value);return;
     }
     if(action==='final-pot'){
-      correct=Number(value)===s.quote.finalPot;
-      if(!correct){remember('pot');feedback='Try again. '+s.hint;}
-      else feedback='Final pot: '+s.pot+' + '+s.bet+' + '+s.bet+' = '+s.quote.finalPot+'. You chose '+decision.toLowerCase()+'. '+(decision===s.answer?'That earns more on average. ':'The better action here is '+s.answer.toLowerCase()+'. ')+s.explain;
-      renderWithFocus(correct?'next':'final-pot',correct?undefined:value);return;
+      potConfirmed=Number(value)===s.quote.finalPot;
+      if(potConfirmed)gradeReviewDecision(s);
+      else {remember('pot');feedback='Try again. '+s.hint;renderWithFocus('final-pot',value);}
+      return;
     }
     if(action==='select'){
       if(correct)return;

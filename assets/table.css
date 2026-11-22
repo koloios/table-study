@@ -1,0 +1,36 @@
+.table-intro { padding-bottom: 0; }
+.table-modes { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 12px 0 24px; border-bottom: 1px solid var(--line); }
+.table-modes a { padding: 8px 0 10px; text-decoration: none; color: var(--sub); }
+.table-modes a[aria-current] { border-bottom: 3px solid var(--green); color: var(--ink); font-weight: 700; }
+.table-modes a:hover { text-decoration: underline; }
+.live-felt .row { align-items: center; }
+.table-player { display: flex; align-items: center; gap: 14px; margin-top: 24px; }
+.table-player b { font-size: 18px; }
+.table-player small { display: block; }
+.table-player .stack { color: #dfebd8; margin-left: 4px; font-size: 14px; }
+.table-board { padding: 19px 0; margin-top: 24px; border-block: 1px solid #88aa8b6b; text-align: center; }
+.board-cards, .pocket { display: flex; gap: 5px; align-items: center; }
+.board-cards { justify-content: center; margin-top: 12px; }
+.pot-chip { display: inline-flex; align-items: baseline; gap: 7px; font-size: 15px; }
+.pot-chip b { font: 32px/1 Georgia, serif; }
+.board-slot { width: 44px; height: 62px; border: 1px dashed #9db7a3; border-radius: 6px; }
+.covered-pair { display: flex; gap: 5px; }
+.covered-pair::before,.covered-pair::after { content:''; width: 42px; height: 60px; border: 1px solid #a8baa5; border-radius: 6px; background: repeating-linear-gradient(45deg,#45705d 0 2px,#315a49 2px 6px); box-shadow: inset 0 0 0 3px #37604f; }
+.table-history ol { padding-left: 1.6em; }
+.table-history li { padding: 2px 0; }
+.table-history small { color: var(--sub); }
+.wager { display:flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+.wager input,.decision-panel select { padding: 8px; background: #fff; border: 1px solid #859b8d; border-radius: 6px; color: var(--ink); font: inherit; max-width: 100%; }
+.wager input { width: 5em; }
+.decision-panel select { display:block; margin: 4px 0 12px; }
+.table-coach { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 12px; }
+.table-coach .plain { text-decoration: underline; padding: 4px 0; text-underline-offset: 4px; }
+.table-coach p { margin-top: 10px; }
+.table-rules { max-width: 70ch; }
+.decision-panel:focus { outline: none; }
+@media(max-width:450px) {
+  .table-modes { gap: 14px; font-size: 15px; }
+  .board-slot { width: 34px; height: 48px; }
+  .covered-pair::before,.covered-pair::after { width: 32px; height: 46px; }
+}
+.river-table details p { color: inherit; }
