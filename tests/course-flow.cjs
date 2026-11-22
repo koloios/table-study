@@ -4,7 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-let saved = JSON.stringify({review: {seed: 0, at: 1, done: false}});
+const records=new Map([['table-study.foundations.v1',JSON.stringify({review:{seed:0,at:1,done:false}})]]);
+const load=id=>JSON.parse(records.get('table-study.foundations.v2.'+id));
 let handleClick;
 const app = {
   innerHTML: '',
@@ -15,9 +16,10 @@ const context = vm.createContext({
   document: {querySelector: selector => selector === '#app' ? app : {}},
   location: {hash: '#review'},
   window: {addEventListener() {}, scrollTo() {}},
-  localStorage: {getItem: () => saved, setItem: (_, value) => { saved = value; }}
+  localStorage: {getItem: key => records.get(key) ?? null, setItem: (key, value) => records.set(key,value)}
 });
-for (const name of ['poker', 'lessons', 'practice', 'course']) {
+context.window.localStorage=context.localStorage;
+for (const name of ['poker', 'lessons', 'practice', 'progress', 'course']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../assets', name + '.js'), 'utf8'), context);
 }
 function click(action, value = '') {
@@ -35,11 +37,11 @@ click('final-pot', '56');
 assertAwaiting('answer');
 click('answer', 'Fold');
 assertAwaiting('answer');
-assert.equal(JSON.parse(saved).review.at, 1);
+assert.equal(load('lesson.review').at, 1);
 click('answer', 'Call');
 click('next');
-assert.equal(JSON.parse(saved).review.at, 2);
-assert(JSON.parse(saved).practice.price);
+assert.equal(load('lesson.review').at, 2);
+assert(load('skill.price'));
 
 // The second hand must require its own pot calculation, even with a correct action.
 click('answer', 'Fold');
@@ -47,6 +49,7 @@ click('final-pot', '12');
 assertAwaiting('final-pot');
 click('final-pot', '16');
 click('next');
-assert.equal(JSON.parse(saved).review.at, 3);
-assert(JSON.parse(saved).practice.pot);
+assert.equal(load('lesson.review').at, 3);
+assert(load('skill.pot'));
+assert.deepEqual(load('lesson.review').attempts, {1:'assisted',2:'assisted'});
 console.log('Two-part review checkpoint checks passed.');

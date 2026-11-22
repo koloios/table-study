@@ -1,6 +1,6 @@
 # Table Study
 
-[Course library](https://koloios.github.io/table-study/) · [Play Hold’em Foundations](https://koloios.github.io/table-study/#holdem) · [Practice Table](https://koloios.github.io/table-study/#table) · [Bridge course preview](https://koloios.github.io/table-study/#bridge)
+[Course library](https://koloios.github.io/table-study/) · [Play Hold’em Foundations](https://koloios.github.io/table-study/#holdem) · [Practice Table](https://koloios.github.io/table-study/#table) · [Bridge Foundations pilot](https://koloios.github.io/table-study/#bridge)
 
 A self-paced browser course for someone sitting down to Texas Hold’em for the first time. The first release teaches four-handed, play-chip Hold’em through a rotating table, showdowns, one-card draws, and decisions with a fixed all-in price. Basic arithmetic is introduced where a player needs it.
 
@@ -15,7 +15,7 @@ A self-paced browser course for someone sitting down to Texas Hold’em for the 
 | 5. Test a prediction | Predict a count and draw independent batches from the same turn. Compare observed frequency against exact enumeration. | Explain a short losing streak and distinguish a fresh trial from drawing twice from one deck. |
 | 6. Play the review hand | Sit in the big blind and play a complete coached hand. Replay the river decision at another price. | Choose call or fold in two different pots, build the final pot, and explain why the bigger call can earn more. Revisit missed skills on a later day. |
 
-Each unit has a worked example before the independent task. Wrong answers explain the specific misconception. Checkpoints allow retries, so completion records practice, not demonstrated mastery on a first attempt. Statistics concern the specified deal and assumptions: exposed holdings, a fair shuffle, no fees, and no further betting on an all-in. Browser progress stays on the device. Missed skills appear on the Hold’em course map with focused practice hands. A correct first attempt on a fresh practice hand clears the skill.
+Each unit has a worked example before the independent task. Wrong answers explain the specific misconception. Checkpoints allow retries, and the course map separately records first-try answers and checkpoints completed after a retry. Existing completion records are preserved. Statistics concern the specified deal and assumptions: exposed holdings, a fair shuffle, no fees, and no further betting on an all-in. Browser progress stays on the device. Missed skills appear on the Hold’em course map with focused practice hands. A correct first attempt on a fresh practice hand clears the skill.
 
 ## Practice Table
 
@@ -23,15 +23,21 @@ Each unit has a worked example before the independent task. Wrong answers explai
 - **River bluff lab.** A single river bet offers a precisely solvable decision. Compare an equilibrium opponent with one that bluffs more or less often. The explanation derives the bluff frequency and shows the chip value of calling under each assumption.
 - **Play Slumbot.** Load Eric Jackson’s independently hosted heads-up table on request. Slumbot handles its own deals and decisions. The local coach and replay belong to Mira’s table. [Slumbot](https://slumbot.com/)
 
-## Later courses
+## Intermediate Hold’em and Bridge
 
-[Intermediate Hold’em course preview](https://koloios.github.io/table-study/#intermediate) covers the planned topics of preflop ranges by position and stack depth, two-card draws, dirty outs, weighted opponent ranges, board texture, bet sizing and multi-street plans. Its assessment will use unseen deals with hidden opponents and ask the learner to justify a line before the outcome. **Bridge** is a planned separate course, beginning with following suit, taking tricks and partnership play.
+[Read a weighted range](https://koloios.github.io/table-study/#intermediate/ranges) compares two betting histories on the same turn. Remove a blocked combination, count rivers for each remaining hand, weight the results, then choose call or fold. The second hand changes both cards and price.
+
+[Size a bet and plan the turn](https://koloios.github.io/table-study/#intermediate/streets) puts the learner on the button. Commit to a flop size, a reason, and plans for two possible turns. Compare the resulting pots, stacks, and showdown equity under the stated opponent model.
+
+[Bridge Foundations](https://koloios.github.io/table-study/#bridge/play) begins with South declaring one no-trump. Identify the opening leader, play a three-trick ending from South and dummy, then solve a fresh ending with the winners in different seats. The pilot assumes the auction has finished.
 
 ## Running the site
 
 Open `index.html` directly or serve the repository root with a static web server. The lessons and local table run without a build step or account. Slumbot needs an internet connection and loads only when the learner opens its table. GitHub Pages can serve the root of the main branch. The original guided hand remains accessible at `turn-study/index.html`.
 
 ## Roadmap
+
+The first four milestones below have playable releases. The next step is a beginner pilot. Ask learners to complete the lessons without coaching, then return on a different day and try a fresh draw, a call-price decision and the no-trump ending. Record the first action, their explanation, any hint or retry, and where navigation interrupts the task. Use those observations to revise the explanations and assessment hands.
 
 | Release | What the learner can do | How to check it |
 | --- | --- | --- |

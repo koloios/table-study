@@ -34,8 +34,17 @@ for (let seed = 0; seed < 60; seed++) {
         const suit = deal.you[0][1];
         assert.equal(outcomes.length, 44);
         assert(outcomes.every(o => o.result !== 0 && !visible.includes(o.card)));
-        assert.equal(winners.length, 13 - visible.filter(c => c[1] === suit).length);
-        assert(winners.every(o => o.card[1] === suit));
+        if (deal.you[0][1] === deal.you[1][1]) {
+          assert.equal(winners.length, 13 - visible.filter(c => c[1] === suit).length);
+          assert(winners.every(o => o.card[1] === suit));
+        }
+        if (step.title === 'Count a fresh draw') {
+          assert.equal(winners.length, [9, 8, 4, 2][seed % 4]);
+          assert.equal(Number(step.answer), winners.length);
+        }
+        if (step.quote) {
+          assert.equal(step.quote.ev, poker.callPrice(step.pot, step.bet, winners.length / 44).ev);
+        }
       }
       if (step.title === 'Award a fresh pot') {
         const yourScore = poker.best([...deal.you, ...deal.board]).score;

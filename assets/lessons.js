@@ -51,15 +51,30 @@ const Course = (() => {
       {...read('Show your evidence','Select the best five cards available to you on this deal.',cards(fresh,{select:true})),pick:true,checkpoint:true,explain:'Those five make your strongest hand. Equal-ranked interchangeable cards are accepted.'}
     ];
   }
+  const drawFamilies = [
+    {deal:base, hint:'Count the unseen cards of the suit that would complete your flush.'},
+    {deal:{you:['7♦','8♣'], opp:['K♣','K♥'], board:['5♠','6♥','K♦','2♣']},
+      hint:'Your four consecutive ranks can make a straight at either end. Count both ranks.'},
+    {deal:{you:['Q♥','J♣'], opp:['A♥','A♠'], board:['8♦','9♠','A♣','2♥']},
+      hint:'Find the rank that fills the gap between your nine and jack. A pair cannot beat three aces.'},
+    {deal:{you:['Q♥','Q♣'], opp:['K♦','K♣'], board:['2♥','5♦','9♣','J♠']},
+      hint:'Which single rank turns your smaller pair into three of a kind?'}
+  ];
+  function freshDraw(seed) {
+    const family=drawFamilies[seed % drawFamilies.length];
+    const deal=changeSuits(family.deal, Math.floor(seed / drawFamilies.length) % 4);
+    const winners=outcomes(deal).filter(o=>o.result>0).map(o=>o.card);
+    return {deal, winners, hint:family.hint};
+  }
   function draws(seed) {
-    const fresh=changeSuits(seed%2?blocked:base,(seed%3)+1);
-    const wins=outcomes(fresh).filter(x=>x.result>0).length;
+    const {deal:fresh, winners, hint}=freshDraw(seed);
+    const wins=winners.length;
     return [
       read('One card to come','The river is the final shared card. You have four hearts across your hand and the board. Mira shows two aces. A heart makes your flush; every other river leaves Mira ahead. A winning river card is called an out.',cards(base),'Count the hearts'),
       ask('Count the outs','There are 13 hearts in the deck. How many winning hearts are still unseen?',cards(base),['4','9','13'],'9','Subtract four visible hearts from thirteen. Each remaining heart wins this particular hand.','Count the two hearts you hold and the two on the board.'),
       read('Build the denominator','You know eight card identities: two of yours, two of Mira’s, and four shared cards. That leaves 52 − 8 = 44 possible river cards. Nine win, so 9 ÷ 44 × 100 = 20.5%, rounded. Choose a river below to see each player’s best five.',cards(base,{inspect:true}),'Change one card'),
       ask('Reveal a blocker','Replace Mira’s ace of clubs with the ace of hearts. It is still a pair of aces. What changes?',cards(blocked),['8 wins in 44','9 wins in 43','9 wins in 44'],'8 wins in 44','Another heart is visible, so one fewer winning river remains. The total number of known cards stays eight.','Recount visible hearts, then visible cards of any suit.'),
-      ask('Count a fresh draw','How many rivers win for you on this deal?',cards(fresh),['7','8','9','10'],String(wins),wins+' of 44 rivers win, a probability of '+pct(wins/44)+'.','Count the cards of your suit already showing, including Mira’s.',true),
+      ask('Count a fresh draw','How many rivers win for you on this deal?',cards(fresh),numericChoices(wins,[wins+1,wins+2,wins-1]),String(wins),'The winning cards are '+winners.join(' ')+'. That gives '+wins+' of 44, or '+pct(wins/44)+'.',hint,true),
       ask('What about a burn card?','The dealer takes the next card off the deck face down before dealing the river. Which probability now applies from your seat?',cards(fresh),[wins+' / 44',wins+' / 43',(wins-1)+' / 43'],wins+' / 44','A burn changes where the river sits in the deck. Its identity is unknown, so every one of the 44 unseen identities still has an equal chance to be the river.','Ask whether you learned the identity of a card.',true)
     ];
   }
@@ -85,16 +100,17 @@ const Course = (() => {
     ];
   }
   function review(seed) {
-    const fresh=changeSuits(base,seed%4);
-    const scenarios=[{pot:40,bet:8},{pot:8,bet:4}];
+    const {deal:fresh,winners}=freshDraw(seed);
+    const wins=winners.length, chance=wins/44;
+    const scenarios=[{pot:Math.max(40,Math.ceil(8/chance)),bet:8},{pot:8,bet:4}];
     if(seed%2) scenarios.reverse();
     const decisions=scenarios.map(({pot,bet},i)=>{
-      const quote=Poker.callPrice(pot,bet,9/44);
+      const quote=Poker.callPrice(pot,bet,chance);
       return {
         ...ask(i===0?'Choose your line':'Try the other pot',
-          'The pot begins at '+pot+' chips. Mira bets her last '+bet+'. You can see both hands and have nine winning rivers out of 44. Pick an action, then show how you priced it.',
+          'The pot begins at '+pot+' chips. Mira bets her last '+bet+'. You can see both hands and have '+wins+' winning rivers out of 44. Pick an action, then show how you priced it.',
           cards(fresh), ['Call','Fold'], quote.ev>0?'Call':'Fold',
-          'Your chance to win is '+pct(9/44)+'. A '+bet+'-chip call needs '+bet+' ÷ '+quote.finalPot+' = '+pct(quote.breakEven)+' wins to break even. Calling averages '+quote.ev.toFixed(2)+' chips. Folding adds zero.',
+          'Your chance to win is '+pct(chance)+'. A '+bet+'-chip call needs '+bet+' ÷ '+quote.finalPot+' = '+pct(quote.breakEven)+' wins to break even. Calling averages '+quote.ev.toFixed(2)+' chips. Folding adds zero.',
           'Include the starting pot, Mira’s bet and your call.',true),
         quote, pot, bet
       };
@@ -102,7 +118,7 @@ const Course = (() => {
     return [
       {...read('Play the whole hand','Take the big blind, follow the other seats, then count and price a river draw. Return to Foundations when you are ready for a fresh decision.',cards(base),'Continue to the independent hand'),guided:true},
       ...decisions,
-      ask('Explain the reversal','Why is paying 8 chips profitable in one deal while paying 4 loses chips on average in the other?',cards(fresh),['The bigger bet creates more outs','The 8-chip call costs a smaller fraction of its final pot','A cheap call always wins less often'],'The 8-chip call costs a smaller fraction of its final pot','You paid 8 for a final pot of 56, or 4 for a final pot of 16. The cards gave you the same chance in both deals.','Compare each call with its own final pot.',true)
+      ask('Explain the reversal','Why is paying 8 chips profitable in one deal while paying 4 loses chips on average in the other?',cards(fresh),['The bigger bet creates more outs','The 8-chip call costs a smaller fraction of its final pot','A cheap call always wins less often'],'The 8-chip call costs a smaller fraction of its final pot','You paid 8 for a final pot of '+(scenarios.find(s=>s.bet===8).pot+16)+', or 4 for a final pot of 16. The cards gave you the same chance in both deals.','Compare each call with its own final pot.',true)
     ];
   }
   const units=[

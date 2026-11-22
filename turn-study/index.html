@@ -12,7 +12,7 @@
 <script>
 'use strict';
 const $=s=>document.querySelector(s);
-const chapters=['Table order','Count the draw','Price the call','River lab'];
+const chapters=['Table order','Count the draw','Price the call','River sampling'];
 const starts=[0,6,8,10];
 const suits=['♥','♠','♦','♣'], ranks=Array.from('23456789TJQKA');
 const hand=['8♥','7♥'], board=['K♥','2♠','4♥','J♣'], aces=['A♣','A♦'];
@@ -78,7 +78,35 @@ function mathForStep(expanded) {
   }
   return '';
 }
-function render(){
+const walkKey='table-study.guided-hand.v1';
+let finished=false;
+function saveHand() {
+  const json=JSON.stringify({current:snapshot(), history:history.slice(-40)});
+  for (const name of ['sessionStorage','localStorage']) {
+    try {window[name].setItem(walkKey,json);} catch {}
+  }
+}
+function validHand(s) {
+  const between=(n,min,max)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
+  return s && between(s.step,0,11) && between(s.countPart,0,2) && between(s.beat,0,2) &&
+    [2,8].includes(s.price) && ['','Call','Fold'].includes(s.decision) &&
+    (s.river===''||pool.includes(s.river)) && between(s.trials,0,Number.MAX_SAFE_INTEGER) &&
+    between(s.hits,0,s.trials) && Array.isArray(s.recent) && s.recent.length<=24 &&
+    s.recent.every(hit=>typeof hit==='boolean') && [null,5,20,50].includes(s.prediction) &&
+    typeof s.finished==='boolean' && (!s.finished||s.step===11);
+}
+function restore(s){({step,countPart,beat,price,decision,river,hits,trials,recent,prediction,finished}=s);}
+function resumeHand() {
+  for(const name of ['sessionStorage','localStorage']) {
+    try {
+      const s=JSON.parse(window[name].getItem(walkKey));
+      if(!validHand(s?.current))continue;
+      history=Array.isArray(s.history)?s.history.slice(-40).filter(validHand):[];
+      restore(s.current);break;
+    } catch {}
+  }
+}
+function render(focus=true){
 const expanded = document.querySelector('.work[open]')?.dataset.step === String(step);
 const ch=chapter();$('#nav').innerHTML=chapters.map((v,i)=>'<button data-cmd="jump'+i+'" '+(i===ch?'aria-current="step"':'')+'><span class="index">0'+(i+1)+'</span>'+v+'</button>').join('');
 table();let body='',actions='';
@@ -107,19 +135,23 @@ case 10:body='Keep both hands and the four shared cards fixed. Each trial draws 
 if(prediction===null){actions=opts([['About 5','guess5'],['About 20','guess20'],['About 50','guess50']]);}
 else{body='You predicted about '+prediction+' flushes per 100. The deck gives 9 ÷ 44, or about 20.5 per 100. Deal a small batch, then a larger one. How far does your observed rate move from the mark?';body+='</p><div class="stat"><small>Observed flushes</small><b>'+hits+' / '+trials+'</b><div class="track"><span style="width:'+(trials?100*hits/trials:0)+'%"></span><i></i></div><small>'+(trials?(100*hits/trials).toFixed(1)+'% observed':'No trials yet')+' · mark = 20.5% expected</small></div>'+(recent.length?'<div class="flashes" aria-hidden="true">'+recent.map(v=>'<i class="'+(v?'hit':'')+'"></i>').join('')+'</div><small>Latest '+recent.length+' rivers · red = heart</small>':'')+'<p>';actions=btn('Deal 10','sim10','main')+btn('Deal 100','sim100')+(trials?next('Move the button'):'');}break;
 case 11:body='Same four seats, fresh practice stacks. The button has moved clockwise from Mira to Sol. You post the small blind, and Ivo posts the big blind. Before the flop, whose turn comes first?';actions=opts([['Mira','finish'],['You','wrongNext'],['Sol','wrongNext']]);break}
-$('#lesson').innerHTML='<div class="kicker">Guided hand / '+chapters[ch]+'</div><h2>'+titles[step]+'</h2><p>'+body+'</p><div class="actions">'+actions+'</div><div class="feedback" role="status" id="feedback"></div>'+mathForStep(expanded);
-$('#progress').textContent='Step '+(step+1)+' of '+titles.length;$('#back').disabled=!history.length}
-function snapshot(){return {step,countPart,beat,price,decision,river,hits,trials,recent:recent.slice(),prediction}}
-function go(n){history.push(snapshot());step=n;if(n===7)countPart=0;if(n===1)beat=0;render()}
+if(finished){body='Mira leads the new hand. You followed a full deal, priced a draw and tested your probability with repeated rivers.';actions='<a class="btn main" href="../index.html#review/independent">Continue to the independent hand</a>'+btn('Replay the hand','restart');}
+$('#lesson').innerHTML='<div class="kicker">Guided hand / '+chapters[ch]+'</div><h2 tabindex="-1">'+(finished?'Hand complete':titles[step])+'</h2><p>'+body+'</p><div class="actions">'+actions+'</div><div class="feedback" role="status" id="feedback"></div>'+mathForStep(expanded);
+$('#progress').textContent='Step '+(step+1)+' of '+titles.length;$('#back').disabled=!history.length;
+saveHand();
+if(focus)$('#lesson h2').focus({preventScroll:true});
+}
+function snapshot(){return {step,countPart,beat,price,decision,river,hits,trials,recent:recent.slice(),prediction,finished}}
+function go(n){history.push(snapshot());finished=false;step=n;if(n===7)countPart=0;if(n===1)beat=0;render()}
 function draw(){return pool[Math.floor(Math.random()*pool.length)]}
 function feedback(s){$('#feedback').textContent=s}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-cmd]');if(!b)return;const c=b.dataset.cmd;
 if(c.startsWith('jump')){const n=starts[Number(c.slice(4))];if(n!==step)go(n);return}
 if(c==='countNine'||c==='countPool'){history.push(snapshot());countPart=c==='countNine'?1:2;render();return}
 if(c.startsWith('wrong')){feedback(({wrongMira:'Mira has the button. Start at your BB marker and move one seat clockwise.',wrongYou:'Your big blind starts the pot. The player on your left gets the first decision.',wrongFlop:'Start at Mira’s dealer button and move clockwise to the first player still holding cards.',wrongPool:'Start with 52 cards. Subtract only those you can identify: 2 + 4 + 2. The folded cards are face down.',wrongCount:'Count the two hearts in your hand and the two on the board. Subtract those four from 13.',wrongNext:'Find Ivo’s BB marker. Move one seat clockwise from Ivo.'})[c]);return}
-if(c==='finish'){$('#lesson .actions').innerHTML=btn('Replay the hand','restart','main')+btn('Return to river lab','jump3')+'<a class="btn" href="../index.html#review">Return to Foundations</a>';feedback('Exactly. Mira acts first. You followed a full hand, priced a draw, and used repeated deals to test its probability.');return}
+if(c==='finish'){history.push(snapshot());finished=true;render();return}
 if(c==='advanceSeat'){if(beat===2){go(2)}else{history.push(snapshot());beat++;render()}return}
-if(c==='restart'){step=0;countPart=0;beat=0;history=[];price=2;decision='';river='';hits=trials=0;recent=[];prediction=null;render();return}
+if(c==='restart'){finished=false;step=0;countPart=0;beat=0;history=[];price=2;decision='';river='';hits=trials=0;recent=[];prediction=null;render();return}
 if(c==='next'||c==='correct'){go(step+1);return}
 if(c.startsWith('price')){price=Number(c.slice(5));render();return}
 if(c==='call'||c==='fold'){history.push(snapshot());decision=c==='call'?'Call':'Fold';river=decision==='Call'?draw():'';step=9;render();return}
@@ -138,6 +170,7 @@ const dealerPrompts = [
   ['Pass the button', 'Check your physical deck: 8 private cards + 5 board cards + 3 burns leaves 36 in the stub. Gather all 52, move the button one seat clockwise, and deal again. For the second deal, cover these instructions and say each step aloud.', ['Practice again'], 0]
 ];
 let dealerStep = 0;
+try {const n=Number(localStorage.getItem('table-study.dealer-step'));if(Number.isInteger(n)&&n>=0&&n<dealerPrompts.length)dealerStep=n;}catch {}
 function renderDealer() {
   const [title, prompt, choices] = dealerPrompts[dealerStep];
   document.querySelector('#dealer-drill').innerHTML =
@@ -155,12 +188,13 @@ document.querySelector('#dealer-drill').addEventListener('click', event => {
     return;
   }
   dealerStep = (dealerStep + 1) % dealerPrompts.length;
+  try {localStorage.setItem('table-study.dealer-step',String(dealerStep));}catch {}
   renderDealer();
   document.querySelector('#dealer-drill button').focus({preventScroll:true});
 });
 renderDealer();
 if(location.hash === '#dealer-practice') document.querySelector('#dealer-practice').open = true;
 if(new URLSearchParams(location.search).get('course')==='review') $('#map-link').href='../index.html#review';
-$('#back').onclick=()=>{const s=history.pop();if(!s)return;({step,countPart,beat,price,decision,river,hits,trials,recent,prediction}=s);render()};
-render();
+$('#back').onclick=()=>{const s=history.pop();if(!s)return;restore(s);render()};
+resumeHand();render(false);
 </script></body></html>
