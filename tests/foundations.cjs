@@ -55,6 +55,19 @@ for (let seed = 0; seed < 60; seed++) {
   }
 }
 const practice = vm.runInContext('Practice', context);
+const linesByFamily=Array.from({length:4},()=>new Set());
+for(let seed=0;seed<16;seed++){
+  const hand=course.riverHand(seed);
+  const rivers=poker.rivers(hand.deal);
+  assert.equal(hand.total,44);
+  assert.equal(rivers.length,hand.total);
+  assert(rivers.every(r=>r.result!==0));
+  assert.deepEqual(hand.winners,rivers.filter(r=>r.result>0).map(r=>r.card));
+  assert.deepEqual(hand.quote,poker.callPrice(hand.pot,hand.bet,hand.winners.length/44));
+  assert.notDeepEqual(hand.deal,course.base);
+  linesByFamily[seed%4].add(Math.sign(hand.quote.ev));
+}
+assert(linesByFamily.every(lines=>lines.has(1)&&lines.has(-1)&&!lines.has(0)));
 for(let seed=0;seed<24;seed++){
   const prices=course.units.at(-1).build(seed).filter(s=>s.quote);
   assert.equal(prices.length,2);

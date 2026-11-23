@@ -4,10 +4,15 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const context=vm.createContext({});
-for(const name of ['poker','intermediate','progress']){
+for(const name of ['poker','card-notes','intermediate','progress']){
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',name+'.js'),'utf8'),context);
 }
 const course=vm.runInContext('Intermediate',context);
+const guidedRange=course.rangeExercise(course.rangeDeals[0],true);
+const answers=new Map(Object.entries({blocked:'K♥ K♦',betShare:'18.8',betAction:'call',checkShare:'15.3',checkAction:'fold'}));
+assert.equal(guidedRange.assess(answers),'');
+answers.set('betShare','18.7');
+assert.match(guidedRange.assess(answers),/flop bet/);
 for(const [index,deal] of course.rangeDeals.entries()){
   for(const bet of [true,false]){
     const result=course.analyzeRange(deal,bet);

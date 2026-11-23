@@ -52,28 +52,43 @@ const Course = (() => {
     ];
   }
   const drawFamilies = [
-    {deal:base, hint:'Count the unseen cards of the suit that would complete your flush.'},
+    {deal:base, hint:'Count the unseen cards of the suit that would complete your flush.',
+      reason:'Each of these rivers gives you five cards of one suit. Your flush beats Mira’s aces.'},
     {deal:{you:['7♦','8♣'], opp:['K♣','K♥'], board:['5♠','6♥','K♦','2♣']},
-      hint:'Your four consecutive ranks can make a straight at either end. Count both ranks.'},
+      hint:'Your four consecutive ranks can make a straight at either end. Count both ranks.',
+      reason:'A four or a nine completes your straight. Either end beats Mira’s three kings.'},
     {deal:{you:['Q♥','J♣'], opp:['A♥','A♠'], board:['8♦','9♠','A♣','2♥']},
-      hint:'Find the rank that fills the gap between your nine and jack. A pair cannot beat three aces.'},
+      hint:'Find the rank that fills the gap between your nine and jack. A pair cannot beat three aces.',
+      reason:'Only a ten fills the gap between the nine and jack. Your straight then beats Mira’s three aces.'},
     {deal:{you:['Q♥','Q♣'], opp:['K♦','K♣'], board:['2♥','5♦','9♣','J♠']},
-      hint:'Which single rank turns your smaller pair into three of a kind?'}
+      hint:'Which single rank turns your smaller pair into three of a kind?',
+      reason:'You hold two queens, leaving two in the deck. Either gives you three queens to beat Mira’s kings.'}
   ];
   function freshDraw(seed) {
     const family=drawFamilies[seed % drawFamilies.length];
     const deal=changeSuits(family.deal, Math.floor(seed / drawFamilies.length) % 4);
     const winners=outcomes(deal).filter(o=>o.result>0).map(o=>o.card);
-    return {deal, winners, hint:family.hint};
+    return {deal, winners, hint:family.hint, reason:family.reason};
+  }
+  function riverHand(seed) {
+    // Rotate the suits of the original guided board when its family comes up.
+    const {deal,winners,reason}=freshDraw(seed%16===0?seed+4:seed);
+    const total=outcomes(deal).length;
+    const chance=winners.length/total;
+    const pot=24;
+    const bets=[2,4,10,1];
+    const bet=bets[(seed%4+Math.floor(seed/4))%bets.length];
+    const quote=Poker.callPrice(pot,bet,chance);
+    return {deal,winners,reason,total,chance,pot,bet,quote};
   }
   function draws(seed) {
     const {deal:fresh, winners, hint}=freshDraw(seed);
     const wins=winners.length;
     return [
-      read('One card to come','The river is the final shared card. You have four hearts across your hand and the board. Mira shows two aces. A heart makes your flush; every other river leaves Mira ahead. A winning river card is called an out.',cards(base),'Count the hearts'),
+      read('One card to come','The river is the final shared card. You hold 8♥ 7♥. The board adds K♥ 4♥, bringing your count to four hearts. Mira shows A♣ A♦. Any heart on the river completes your flush and beats her aces. A winning river card is called an out.',cards(base),'Count the hearts'),
       ask('Count the outs','There are 13 hearts in the deck. How many winning hearts are still unseen?',cards(base),['4','9','13'],'9','Subtract four visible hearts from thirteen. Each remaining heart wins this particular hand.','Count the two hearts you hold and the two on the board.'),
-      read('Build the denominator','You know eight card identities: two of yours, two of Mira’s, and four shared cards. That leaves 52 − 8 = 44 possible river cards. Nine win, so 9 ÷ 44 × 100 = 20.5%, rounded. Choose a river below to see each player’s best five.',cards(base,{inspect:true}),'Change one card'),
-      ask('Reveal a blocker','Replace Mira’s ace of clubs with the ace of hearts. It is still a pair of aces. What changes?',cards(blocked),['8 wins in 44','9 wins in 43','9 wins in 44'],'8 wins in 44','Another heart is visible, so one fewer winning river remains. The total number of known cards stays eight.','Recount visible hearts, then visible cards of any suit.'),
+      read('Build the denominator','Swap one of Mira’s aces. Predict which number changes in the fraction, then look at the crossed-out hearts. Explore any remaining river to see both players’ best five.',cards(base,{inspect:true}),'Change one card'),
+      ask('Reveal a blocker','Suppose Mira shows A♥ A♦ instead of A♣ A♦. It is still a pair of aces. What changes?',cards(blocked),['8 wins in 44','9 wins in 43','9 wins in 44'],'8 wins in 44','Another heart is visible, so one fewer winning river remains. The total number of known cards stays eight.','Recount visible hearts, then visible cards of any suit.'),
       ask('Count a fresh draw','How many rivers win for you on this deal?',cards(fresh),numericChoices(wins,[wins+1,wins+2,wins-1]),String(wins),'The winning cards are '+winners.join(' ')+'. That gives '+wins+' of 44, or '+pct(wins/44)+'.',hint,true),
       ask('What about a burn card?','The dealer takes the next card off the deck face down before dealing the river. Which probability now applies from your seat?',cards(fresh),[wins+' / 44',wins+' / 43',(wins-1)+' / 43'],wins+' / 44','A burn changes where the river sits in the deck. Its identity is unknown, so every one of the 44 unseen identities still has an equal chance to be the river.','Ask whether you learned the identity of a card.',true)
     ];
@@ -129,5 +144,5 @@ const Course = (() => {
     {id:'sample',title:'Test a prediction',goal:'Compare a river sample with its calculated probability.',build:samples},
     {id:'review',title:'Play the review hand',goal:'Play through the hand and defend a fresh decision.',build:review}
   ];
-  return {units,names,base,outcomes,pct};
+  return {units,names,base,blocked,outcomes,pct,riverHand};
 })();

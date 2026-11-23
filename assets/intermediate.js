@@ -2,8 +2,10 @@
 
 const Intermediate = (() => {
   const rangeDeals = [
-    {hero:['8♥','7♥'], board:['K♥','2♠','4♥','J♣'], candidates:[['A♣','A♦'],['A♥','Q♥'],['K♥','K♦']], pot:12, bet:3},
-    {hero:['Q♣','J♣'], board:['T♣','9♦','2♣','4♠'], candidates:[['A♣','K♣'],['A♥','A♦'],['Q♣','Q♦']], pot:12, bet:9}
+    {hero:['8♥','7♥'], board:['K♥','2♠','4♥','J♣'], candidates:[['A♣','A♦'],['A♥','Q♥'],['K♥','K♦']], pot:12, bet:3,
+      insight:'Against A♥ Q♥, a heart gives Mira the higher flush. You win by pairing either hole card. Three sevens and three eights remain.'},
+    {hero:['Q♣','J♣'], board:['T♣','9♦','2♣','4♠'], candidates:[['A♣','K♣'],['A♥','A♦'],['Q♣','Q♦']], pot:12, bet:9,
+      insight:'Try 3♣ as the river. Your flush beats A♥ A♦, but A♣ K♣ makes a higher flush. A card that completes your draw can still lose the pot.'}
   ];
   const streetDeals = [
     {hero:['A♠','A♦'], board:['J♥','T♥','4♣'], range:[['K♥','Q♥'],['9♣','8♣'],['Q♣','J♣'],['J♦','9♦']],
@@ -13,7 +15,8 @@ const Intermediate = (() => {
   ];
   const titles = {ranges:'Read a weighted range', streets:'Size a bet and plan the turn'};
   const combinations = hand => hand.join(' ').replaceAll('T', '10');
-  const pct = value => Number((value * 100).toFixed(1)) + '%';
+  const roundedPercent = value => Number((value * 100).toFixed(1));
+  const pct = value => roundedPercent(value) + '%';
   const chips = value => (value > 0 ? '+' : '') + Number(value.toFixed(2));
   const scoreCache = new Map();
 
@@ -68,17 +71,44 @@ const Intermediate = (() => {
   }
 
   function cards(hand) {
-    const suits = {'♣':'clubs','♦':'diamonds','♥':'hearts','♠':'spades'};
     return '<div class="cards">' + hand.map(c => '<span class="card '+('♥♦'.includes(c[1])?'red':'')+
-      '" role="img" aria-label="'+(c[0]==='T'?'10':c[0])+' of '+suits[c[1]]+'">'+
+      '" role="img" aria-label="'+CardNotes.name(c)+'">'+
       (c[0]==='T'?'10':c[0])+'<span>'+c[1]+'</span></span>').join('')+'</div>';
   }
 
   function rangeFacts(deal) {
-    const [a,b] = deal.candidates.map(combinations);
+    const [a,b] = deal.candidates.map(hand=>CardNotes.hand(hand));
     return '<p>You face an all-in of '+deal.bet+' into '+deal.pot+' on the turn. There is one river to come.</p>'+
       '<h3>Mira’s betting history</h3><p>Among comparable turn shoves, these two possible holdings occur equally often before you check the flop history.</p>'+
       '<p>With '+a+', Mira bet the flop in 3 of 4 such hands. With '+b+', she bet the flop in 1 of 4. In each remaining hand she checked.</p>';
+  }
+
+  function mountHoldingComparison(host, deal) {
+    host.innerHTML='<h3>Is this call worth '+deal.bet+' chips?</h3>'+
+      '<div class="prob-switch" role="group" aria-label="Mira’s flop action"><small>On the flop, Mira</small>'+
+      '<button type="button" data-history="bet">Bet</button><button type="button" data-history="check">Checked</button></div>'+
+      '<div data-mix></div><div class="prob-result" data-result role="status"></div>'+
+      '<details><summary>Show the calculation</summary><p data-math></p><p>'+CardNotes.text(deal.insight)+'</p></details>';
+    const buttons=Array.from(host.querySelectorAll('[data-history]'));
+    function show(history) {
+      const result=analyzeRange(deal,history==='bet');
+      const rows=result.rows.filter(row=>row.weight);
+      const count=rows.reduce((total,row)=>total+row.count,0);
+      for(const button of buttons) button.setAttribute('aria-pressed',String(button.dataset.history===history));
+      host.querySelector('[data-mix]').innerHTML=rows.map(row=>{
+        const marks=Array.from({length:count},(_,i)=>'<i class="'+(i<row.count?'filled':'')+'"></i>').join('');
+        return '<div class="holding-row">'+CardNotes.hand(row.hand)+'<div>'+pct(row.weight)+' of her range'+
+          '<span class="weight-marks" aria-hidden="true">'+marks+'</span></div><b>'+row.wins.length+' / '+row.total+' win</b></div>';
+      }).join('');
+      host.querySelector('[data-result]').innerHTML='<strong>'+pct(result.equity)+'</strong> to win · '+
+        (result.ev>0?'Call':'Fold')+' at a '+pct(result.breakEven)+' price';
+      const terms=rows.map(row=>row.count+' × '+row.wins.length);
+      host.querySelector('[data-math]').textContent='('+terms.join(' + ')+') ÷ ('+count+' × '+rows[0].total+') ≈ '+pct(result.equity)+
+        '. Calling costs '+deal.bet+' for a final pot of '+result.finalPot+', so you need '+deal.bet+' ÷ '+result.finalPot+' ≈ '+pct(result.breakEven)+
+        '. A call averages '+chips(result.ev)+' chips. Folding adds 0.';
+    }
+    for(const button of buttons) button.onclick=()=>show(button.dataset.history);
+    show('bet');
   }
 
   function rangeExercise(deal, guided) {
@@ -86,7 +116,7 @@ const Intermediate = (() => {
     const actions = [['call','Call'],['fold','Fold']];
     const blockedOptions = [deal.candidates[2], deal.candidates[0], deal.candidates[1]];
     const formulas = '<p>For each possible holding, remove its two cards together with your two cards and the four on the board. Count your wins over 44 possible rivers.</p>'+
-      '<ul>'+bet.rows.filter(r=>r.weight).map(r=>'<li>'+combinations(r.hand)+' gives '+r.wins.length+' wins and '+r.ties.length+' ties. Winning rivers: '+combinations(r.wins)+'.</li>').join('')+'</ul>';
+      '<ul>'+bet.rows.filter(r=>r.weight).map(r=>'<li>'+CardNotes.hand(r.hand)+' gives '+r.wins.length+' wins and '+r.ties.length+' ties. Winning rivers: '+CardNotes.hand(r.wins)+'.</li>').join('')+'</ul>';
     const forms = [true,false].map(flopBet => {
       const id=flopBet?'bet':'check';
       return '<fieldset><legend>Mira '+(flopBet?'bet':'checked')+' the flop</legend><label>Chance you win (%) '+
@@ -102,19 +132,16 @@ const Intermediate = (() => {
         if (data.get('blocked')!==combinations(deal.candidates[2])) return 'A candidate includes a card in your hand or on the board. Remove that exact combination.';
         for (const [id,calc] of [['bet',bet],['check',check]]) {
           const history = id==='bet'?'flop bet':'flop check';
-          if (Math.abs(Number(data.get(id+'Share'))-100*calc.equity) > 0.051)
+          if (Number(data.get(id+'Share')) !== roundedPercent(calc.equity))
             return 'Revisit the '+history+'. Multiply each holding’s win count by its share among hands with this history, add the results, then divide by 44.';
           if (data.get(id+'Action') !== (calc.ev>0?'call':'fold'))
             return 'Revisit the '+history+'. Compare your weighted chance with '+deal.bet+' divided by the final pot of '+calc.finalPot+'.';
         }
         return '';
       },
-      review:'<p>'+combinations(deal.candidates[2])+' overlaps a visible card. The other two holdings survive. A flop bet weights them 3 to 1, and a flop check weights them 1 to 3.</p>'+
-        [bet,check].map((r,i)=>'<p class="calc"><strong>After a flop '+(i?'check':'bet')+'</strong><br>('+r.rows[0].count+' × '+r.rows[0].wins.length+' + '+r.rows[1].count+' × '+r.rows[1].wins.length+') ÷ (4 × 44) = '+pct(r.equity)+
-        '. A call averages '+chips(r.ev)+' chips. Folding adds 0.</p>').join('')+
-        '<p>The call needs '+deal.bet+' ÷ '+bet.finalPot+' = '+pct(bet.breakEven)+'. The history changes the mix of hands you face and reverses the decision.</p>'+
-        [bet,check].map((result,i)=>'<div class="range-compare"><span>After a flop '+(i?'check':'bet')+' · '+pct(result.equity)+' equity</span><div class="bar" aria-hidden="true"><b style="width:'+100*result.equity+'%"></b><i style="left:'+100*bet.breakEven+'%"></i></div></div>').join('')+'<small>The vertical mark is the break-even price.</small>',
-      guide:guided?'Start with the two compatible holdings. For a flop bet, three examples carry the first holding and one carries the second. For example, (3 × 9 + 1 × 6) ÷ (4 × 44) gives 18.8% to one decimal place. Now reverse the weights for the other history.':''
+      review:'<p>'+CardNotes.hand(deal.candidates[2])+' overlaps a visible card. With the two remaining holdings, your call needs '+pct(bet.breakEven)+
+        ' to break even. After a flop bet you have '+pct(bet.equity)+'. After a check you have '+pct(check.equity)+'.</p>',
+      guide:guided?'Before switching the flop action, predict which holding becomes more likely after a check. Will you still want to call the same turn bet?':''
     };
   }
 
@@ -123,7 +150,7 @@ const Intermediate = (() => {
     ['fixed','Bet automatically because my flop hand was ahead']];
   function streetExercise(deal, guided) {
     return {scene:'<p>You are on the button with '+deal.stack+' chips each behind a '+deal.pot+'-chip flop pot. Mira checks to you.</p>'+
-      '<h3>What will she continue with?</h3><p>For this comparison, Mira holds one of four equally likely hands: '+deal.range.map(combinations).join(', ')+
+      '<h3>What will she continue with?</h3><p>For this comparison, Mira holds one of four equally likely hands: '+deal.range.map(hand=>CardNotes.hand(hand)).join(', ')+
       '. She calls either offered bet with all four, and checks to you again on the turn. If you check back, the same four hands reach the turn.</p>',
       prompt:'Make a two-street plan', body:
         '<p>Choose a flop line and its purpose. Plan for two possible turns before one is dealt. Your turn aim is to take value when weaker hands can call and control the pot when several draws improve.</p>'+
@@ -149,13 +176,22 @@ const Intermediate = (() => {
     const r = analyzeTurn(deal,turnIndex,size);
     return '<p><strong>'+ (size?'You bet '+size+' and Mira called.':'You checked back.') + '</strong> The turn pot is '+r.pot+
       ', with '+r.stack+' behind each. The effective stack is '+Number(r.spr.toFixed(2))+' times the pot.</p>'+
-      '<p>Mira checks the '+deal.turns[turnIndex]+'. '+(turnIndex===0?'Your hand still leads '+deal.value+'. A bet can earn value if worse hands call.':deal.threat+' Checking behind keeps the pot unchanged.')+'</p>'+
-      '<details><summary>Show the turn equity</summary><ul>'+r.rows.map(row=>'<li>'+combinations(row.hand)+': '+row.wins.length+' wins, '+row.ties.length+' ties in '+row.total+' rivers.</li>').join('')+'</ul>'+
+      '<p>Mira checks the '+CardNotes.card(deal.turns[turnIndex])+'. '+(turnIndex===0?'Your hand still leads '+deal.value+'. A bet can earn value if worse hands call.':CardNotes.text(deal.threat)+' Checking behind keeps the pot unchanged.')+'</p>'+
+      '<details><summary>Show the turn equity</summary><ul>'+r.rows.map(row=>'<li>'+CardNotes.hand(row.hand)+': '+row.wins.length+' wins, '+row.ties.length+' ties in '+row.total+' rivers.</li>').join('')+'</ul>'+
       '<p>Weight each hand equally and count ties as half a win. Your showdown equity is '+pct(r.equity)+'. Future bets can change how much of the pot you actually win.</p></details>';
   }
 
   function mount(root, page) {
     if (!Object.hasOwn(titles,page)) return;
+    // An older cached course launcher can open this newer lesson directly.
+    if(typeof CardNotes==='undefined' || typeof CardNotes.name!=='function'){
+      const url=new URL(location.href);
+      if(url.searchParams.get('edition')!=='river-practice'){
+        url.searchParams.set('edition','river-practice');
+        location.replace(url.href);
+      } else root.textContent='The lesson files could not load. Refresh this page to try again.';
+      return;
+    }
     const record = status(page);
     const onward = page==='ranges' ? ['#intermediate/streets',titles.streets] : ['#table/river','Try the river bluff lab'];
     let accepted=false, chosenSize, turnIndex;
@@ -178,10 +214,14 @@ const Intermediate = (() => {
         '<button class="btn main" data-next>'+(guided?'Try an independent hand':'Finish lesson')+'</button>' : '';
       root.innerHTML=intro+'<div class="grid intermediate-grid"><section class="felt"><span class="over">'+(guided?'Guided hand':'Independent hand')+
         ' · '+(page==='ranges'?'Turn':'Flop')+'</span><h2>At the table</h2><small>Community cards</small>'+cards(deal.board)+
-        '<small>Your hand</small>'+cards(deal.hero)+task.scene+'</section><section class="panel decision-panel"><h2>'+task.prompt+'</h2>'+
+        '<small>Your hand</small>'+cards(deal.hero)+task.scene+
+        (page==='ranges'&&(guided||accepted)?'<section class="prob-study" data-holdings aria-label="Compare holdings"></section>':'')+
+        '</section><section class="panel decision-panel"><h2>'+task.prompt+'</h2>'+
         (accepted?feedback:'<form class="intermediate-fields">'+(task.guide?'<p>'+task.guide+'</p>':'')+task.body+
         '<details data-hint><summary>Hint</summary><p>'+task.hint+'</p></details><div class="feedback" role="status" data-error></div><div class="actions"><button class="btn main" type="submit">'+
         (page==='ranges'?'Check my decisions':'Commit my plan and see the turn')+'</button></div></form>')+'</section></div>';
+      const comparison=root.querySelector('[data-holdings]');
+      if(comparison) mountHoldingComparison(comparison,deal);
       if (accepted) {
         root.querySelector('[data-next]').onclick=()=>{record.stage++;accepted=false;write(page,record);render();root.querySelector('h1').setAttribute('tabindex','-1');root.querySelector('h1').focus();};
         const compare=root.querySelector('[data-other]');
