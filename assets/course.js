@@ -2,18 +2,19 @@
 (() => {
   const app=document.querySelector('#app');
   // A cached entry page can still request the pre-release script URLs.
-  if(typeof CardNotes==='undefined' || typeof CardNotes.name!=='function' || typeof Course==='undefined' || typeof Course.riverHand!=='function'){
+  if(typeof CardNotes==='undefined' || typeof CardNotes.name!=='function' || typeof Course==='undefined' || typeof Course.riverHand!=='function' || typeof Strategy==='undefined'){
     const url=new URL(location.href);
-    if(url.searchParams.get('edition')!=='river-practice'){
-      url.searchParams.set('edition','river-practice');
+    if(url.searchParams.get('edition')!=='strategy-1'){
+      url.searchParams.set('edition','strategy-1');
       location.replace(url.href);
     } else app.textContent='The lesson files could not load. Refresh this page to try again.';
     return;
   }
   const {units,names,pct}=Course;
+  const allUnits=[...units,...Strategy.units];
   let storage;
   try {storage=window.localStorage;} catch {}
-  const progress=CourseProgress.open(storage,[...units.map(u=>u.id),'river-hand'],Object.keys(Practice.skills));
+  const progress=CourseProgress.open(storage,[...allUnits.map(u=>u.id),'river-hand'],Object.keys(Practice.skills));
   const {saved,store}=progress;
   const escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function record(id,initialSeed) {
@@ -52,7 +53,7 @@
     return '<div><small>'+label+'</small><div class="cards">'+cards.map(c=>card(c,pick)).join('')+'</div></div>';
   }
   function table(v,seatQuestion=false) {
-    const roles=['D · Button','SB · Small blind','BB · Big blind',''];
+    const roles=['D · Button','SB · Small blind','BB · Big blind',v.pocket?'Cutoff':''];
     const seats=names.map((name,i)=>{
       const roleIndex=(i-v.button+4)%4;
       const hidden=(v.hideYourRole && i===2 && roleIndex!==0 || v.hideBlinds && roleIndex!==0) && !correct;
@@ -62,7 +63,7 @@
       const attrs=interactive?' type="button" data-action="answer" data-value="'+name+'"':'';
       return '<'+tag+attrs+' class="seat s'+i+(i===2?' me':'')+(i===v.fold?' fold':'')+'">'+name+'<small>'+role+'</small></'+tag+'>';
     }).join('');
-    return '<div class="felt"><div class="row"><span class="over">'+v.street+'</span><span class="badge">Pot · '+v.pot+'</span></div><div class="oval">'+seats+'<div class="center"><span class="big" aria-hidden="true">♠</span>Blinds 1 / 2</div></div><small>'+(seatQuestion&&!correct?'Choose a seat on the table.':'Seats run clockwise · You sit at the bottom')+'</small></div>';
+    return '<div class="felt"><div class="row"><span class="over">'+v.street+'</span><span class="badge">Pot · '+v.pot+'</span></div><div class="oval">'+seats+'<div class="center"><span class="big" aria-hidden="true">♠</span>Blinds 1 / 2</div></div><small>'+(seatQuestion&&!correct?'Choose a seat on the table.':'Seats run clockwise · You sit at the bottom')+'</small>'+(v.pocket?'<div class="group">'+group('Your cards · starting stack '+v.stack,v.pocket)+'</div>':'')+'</div>';
   }
   function heartCounter(deal) {
     const known=new Set([...deal.board,...deal.you,...deal.opp]);
@@ -127,7 +128,7 @@
     };
     document.title='Intermediate Hold’em · Table Study';
     app.innerHTML=`<section class="intro"><span class="over">Texas Hold’em / Intermediate</span>
-      <h1>Think beyond your hand</h1><p>Start with the hands Mira could hold. Then choose a bet and plan what you’ll do when the board changes.</p></section>
+      <h1>Think beyond your hand</h1><p>Start with the hands Mira could hold. Then choose a bet and plan what you’ll do when the board changes.</p><a href="#hidden-hand">Start with one exposed hand</a></section>
       <div class="catalog"><section class="felt track-card"><span class="over">Unit 1 · Opponent ranges</span>
       <h2>What could Mira hold?</h2><p>Face the same price twice. See how blockers and Mira’s betting history change which cards can win for you.</p>
       <a class="btn main" href="#intermediate/ranges">${resumeLabel('ranges','Study the range')}</a></section>
@@ -202,13 +203,18 @@
       const state=saved[u.id];
       return '<li><a href="#'+u.id+'"><span class="num">0'+(i+1)+'</span><span><strong>'+u.title+'</strong><span class="desc">'+u.goal+'</span>'+(attemptSummary(state)?'<span class="desc">'+attemptSummary(state)+'</span>':'')+'</span><small>'+(state?.done?'Complete':state?.at?'Resume':'')+'</small></a></li>';
     }).join('');
-    app.innerHTML='<section class="intro"><span class="over">Self-paced course</span><h1>Hold’em Foundations</h1><p>Take a seat, play through a hand, and learn how to decide whether a call is worth its price.</p></section><div class="grid"><div>'+table({street:'Your first table',button:0,pot:3})+'<div class="gameLinks"><a class="btn main" href="#'+resume.id+'">'+(count===units.length?'Revisit':saved[resume.id]?.at?'Resume':'Start')+' · '+resume.title+'</a></div></div><section class="paper"><span class="over">Course map</span><h2>At the table</h2><p class="note">'+count+' of '+units.length+' lessons complete · saved in this browser</p><ol class="map">'+rows+'</ol></section></div><details><summary>Practice with a real deck</summary><p>Use a 52-card deck alongside a seven-step exercise in shuffling, cutting, dealing and burning cards.</p><a href="turn-study/index.html#dealer-practice">Open the dealer exercise</a></details><p class="gameLinks"><a href="#intermediate">Continue to Intermediate Hold’em</a></p>';
+    app.innerHTML='<section class="intro"><span class="over">Self-paced course</span><h1>Hold’em Foundations</h1><p>Take a seat, play through a hand, and learn how to decide whether a call is worth its price.</p></section><div class="grid"><div>'+table({street:'Your first table',button:0,pot:3})+'<div class="gameLinks"><a class="btn main" href="#'+resume.id+'">'+(count===units.length?'Revisit':saved[resume.id]?.at?'Resume':'Start')+' · '+resume.title+'</a></div></div><section class="paper"><span class="over">Course map</span><h2>At the table</h2><p class="note">'+count+' of '+units.length+' lessons complete · saved in this browser</p><ol class="map">'+rows+'</ol></section></div><details><summary>Practice with a real deck</summary><p>Use a 52-card deck alongside a seven-step exercise in shuffling, cutting, dealing and burning cards.</p><a href="turn-study/index.html#dealer-practice">Open the dealer exercise</a></details><p class="gameLinks"><a href="#preflop">Choose a preflop line</a> · <a href="#hidden-hand">From one hand to a range</a> · <a href="#intermediate">Intermediate Hold’em</a></p>';
     app.insertAdjacentHTML('beforeend','<p class="gameLinks"><a class="btn" href="#table">Play at the Practice Table</a></p>'+retryList());
     document.title='Table Study · Hold’em Foundations';
   }
   function completion() {
     const idx=units.indexOf(unit),next=units[idx+1];
     const summary=attemptSummary(entry);
+    if(unit.onward){
+      return '<div class="intro"><span class="over">Lesson complete</span><h1>'+unit.title+'</h1></div><section class="paper"><p>'+unit.goal+'</p>'+
+        (summary?'<p class="calc">Independent checkpoints · '+summary+'</p>':'')+
+        '<div class="actions"><a class="btn main" href="'+unit.onward+'">'+unit.nextTitle+'</a>'+btn('Replay this lesson','repeat')+'</div></section>';
+    }
     if(unit.id==='rivers'){
       return '<div class="intro"><span class="over">Lesson complete</span><h1>Count the rivers</h1></div>'+
         '<section class="paper"><h2>Put your outs to work</h2><p>Take a fresh turn hand. Mira moves all-in. Count the cards that can beat her, then decide whether to pay for the river.</p>'+
@@ -216,7 +222,7 @@
         '<div class="actions"><a class="btn main" href="#rivers/play">Play the turn hand</a><a class="btn" href="#price">Next · Price a call</a>'+
         btn('Practise this lesson again','repeat')+'</div></section>';
     }
-    return '<div class="intro"><span class="over">Lesson complete</span><h1>'+unit.title+'</h1><p>'+unit.goal+'</p></div><div class="paper"><h2>'+(next?'Keep your seat':'Review your progress')+'</h2><p>'+(next?'Your progress is saved. The next lesson is '+next.title.toLowerCase()+'.':units.every(u=>saved[u.id]?.done)?'You’ve completed Hold’em Foundations. On another day, revisit the checkpoints and explain your decisions before revealing the feedback.':'You finished the review hand. The course map shows which other lessons are ready to practise.')+'</p>'+(summary?'<p class="calc">Independent checkpoints · '+summary+'</p>':'')+'<div class="actions">'+(next?'<a class="btn main" href="#'+next.id+'">Next · '+next.title+'</a>':'<a class="btn main" href="#table">Play at the Practice Table</a> <a class="btn" href="#home">Course map</a>')+btn('Practise this lesson again','repeat')+'</div></div>';
+    return '<div class="intro"><span class="over">Lesson complete</span><h1>'+unit.title+'</h1><p>'+unit.goal+'</p></div><div class="paper"><h2>'+(next?'Keep your seat':'Review your progress')+'</h2><p>'+(next?'Your progress is saved. The next lesson is '+next.title.toLowerCase()+'.':units.every(u=>saved[u.id]?.done)?'You’ve completed Hold’em Foundations. On another day, revisit the checkpoints and explain your decisions before revealing the feedback.':'You finished the review hand. The course map shows which other lessons are ready to practise.')+'</p>'+(summary?'<p class="calc">Independent checkpoints · '+summary+'</p>':'')+'<div class="actions">'+(next?'<a class="btn main" href="#'+next.id+'">Next · '+next.title+'</a>':'<a class="btn main" href="#table">Play at the Practice Table</a> <a class="btn" href="#home">Course map</a>')+(unit.id==='seats'?'<a class="btn" href="#preflop">Practise preflop strategy</a>':'')+btn('Practise this lesson again','repeat')+'</div></div>';
   }
   function renderRiverHand() {
     const state=record('river-hand',saved.rivers?saved.rivers.seed+1:undefined);
@@ -232,7 +238,7 @@
       (best==='Call'?'above':'below')+' that price.</p><details><summary>Average chips per call</summary><p>Across all '+total+' rivers, a win gains '+
       (pot+bet)+' chips and a loss costs '+bet+'. ('+winners.length+' × '+(pot+bet)+' − '+(total-winners.length)+' × '+bet+') ÷ '+total+
       ' ≈ '+quote.ev.toFixed(2)+' chips per call. Folding adds 0 from this decision.</p></details>'+
-      '<div class="actions"><a class="btn main" href="#price">Continue to Price a call</a>'+btn('Deal another hand','new-turn')+'</div>':
+      '<div class="actions"><a class="btn main" href="#price">Continue to Price a call</a><a class="btn" href="#hidden-hand">Try a hidden hand</a>'+btn('Deal another hand','new-turn')+'</div>':
       '<h2>Call or fold?</h2><p>The pot holds '+pot+' chips. Mira bets her last '+bet+'. You can see her cards for this exercise. Calling costs '+
       bet+' and takes you to showdown. Folding gives Mira the pot.</p>'+
       '<details><summary>How do I weigh the call?</summary><p>Count the rivers that beat Mira and divide by the number of unseen cards. Compare that chance with your call divided by the final pot, including both players’ bets.</p></details>'+
@@ -258,9 +264,9 @@
     else if(s.choices) actions=s.choices.map(x=>btn(x,'answer',x)).join('');
     else if(s.pick) actions=btn('Check my five ('+selected.length+'/5)','check','','main');
     else actions=btn(s.button,'next','',s.lab&&!sample.length?'off':'main');
-    const extras=(s.visual.ranking?ranking:'')+(unit.id==='seats'&&entry.at===0?'<details><summary>Dealing at home?</summary><p>Practise a shuffle, a cut, two rounds of private cards, and the three burns with a real deck.</p><a href="turn-study/index.html#dealer-practice">Open the dealer exercise</a></details>':'')+
+    const extras=(unit.id==='preflop' && entry.at>0?'<details><summary>Recall the table reads and plan</summary><p>'+CardNotes.text(steps[0].body)+'</p></details>':'')+(s.visual.ranking?ranking:'')+(unit.id==='seats'&&entry.at===0?'<details><summary>Dealing at home?</summary><p>Practise a shuffle, a cut, two rounds of private cards, and the three burns with a real deck.</p><a href="turn-study/index.html#dealer-practice">Open the dealer exercise</a></details>':'')+
       (s.guided?'<p><a class="btn main" href="turn-study/index.html?course=review">Open the coached table</a></p>':'');
-    app.innerHTML='<div class="intro"><span class="over">Foundations / '+(retrySkill?'Practice':('Lesson '+(units.indexOf(unit)+1)+' of 6'))+'</span><h1>'+unit.title+'</h1></div><div class="grid"><section aria-label="Current table">'+visual(s.visual,s.choices===names)+'</section><section class="panel"><span class="over">'+label+'</span><h2>'+s.title+'</h2><p>'+CardNotes.text(s.body)+'</p>'+extras+(unit.id==='sample' && entry.at===2 && entry.lastBatch?'<p class="calc">'+batchText(entry.lastBatch,9/44)+'</p>':'')+'<div class="actions">'+actions+'</div><div class="feedback" role="status">'+CardNotes.text(feedback)+'</div><div class="row controls">'+(retrySkill?'<a href="#holdem">Course map</a>':'<button class="plain" data-action="back" '+(entry.at===0?'disabled':'')+'>Back a step</button>')+'<span>'+(entry.at+1)+' / '+steps.length+'</span></div></section></div>';
+    app.innerHTML='<div class="intro"><span class="over">'+(unit.onward?'Hold’em strategy':'Foundations')+' / '+(unit.onward?'Practice lesson':retrySkill?'Practice':('Lesson '+(units.indexOf(unit)+1)+' of 6'))+'</span><h1>'+unit.title+'</h1></div><div class="grid"><section aria-label="Current table">'+visual(s.visual,s.choices===names)+'</section><section class="panel"><span class="over">'+label+'</span><h2>'+s.title+'</h2><p>'+CardNotes.text(s.body)+'</p>'+extras+(unit.id==='sample' && entry.at===2 && entry.lastBatch?'<p class="calc">'+batchText(entry.lastBatch,9/44)+'</p>':'')+'<div class="actions">'+actions+'</div><div class="feedback" role="status">'+CardNotes.text(feedback)+'</div><div class="row controls">'+(retrySkill?'<a href="#holdem">Course map</a>':'<button class="plain" data-action="back" '+(entry.at===0?'disabled':'')+'>Back a step</button>')+'<span>'+(entry.at+1)+' / '+steps.length+'</span></div></section></div>';
   }
   function route() {
     let page=location.hash.slice(1);
@@ -272,7 +278,7 @@
       window.history?.replaceState(null,'','#review');
     }
     const nav=document.querySelector('#section-nav');
-    unit=units.find(u=>u.id===page);
+    unit=allUnits.find(u=>u.id===page);
     retrySkill='';
     resetStep();
     if(page==='rivers/play'){

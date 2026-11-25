@@ -6,6 +6,8 @@ A self-paced browser course for someone sitting down to Texas Hold’em for the 
 
 ## Hold’em Foundations
 
+Start with [Take your seat](https://koloios.github.io/table-study/#seats) and follow the six lessons below in order. In the first lesson, focus on who acts next and what it costs to stay in the hand. Probability starts in lesson 3, once you can tell which hand wins. At the end of a lesson, try the fresh hand before opening a hint. If a step is confusing, read the feedback and try again.
+
 | Lesson | Guided task | Variation and independent checkpoint |
 | --- | --- | --- |
 | 1. Take your seat | Locate the button and blinds. Follow the first player before and after the flop. Practise shuffling, cutting, burning and dealing with a physical deck. | Follow a four-hand orbit. Find the first player on a fresh hand, skip a folded seat, and calculate the cost of calling from a blind. |
@@ -17,9 +19,11 @@ A self-paced browser course for someone sitting down to Texas Hold’em for the 
 
 Each unit has a worked example before the independent task. Wrong answers explain the specific misconception. Checkpoints allow retries, and the course map separately records first-try answers and checkpoints completed after a retry. Existing completion records are preserved. Statistics concern the specified deal and assumptions: exposed holdings, a fair shuffle, no fees, and no further betting on an all-in. Browser progress stays on the device. Missed skills appear on the Hold’em course map with focused practice hands. A correct first attempt on a fresh practice hand clears the skill.
 
+After lesson 6, play a heads-up hand at the coached Practice Table. Try choosing an action before opening the coach, then review one decision. The [preflop strategy lesson](https://koloios.github.io/table-study/#preflop) revisits the opening round with a four-handed opponent model. For the transition to Intermediate, play [From one hand to a range](https://koloios.github.io/table-study/#hidden-hand), followed by **Read a weighted range** and **Size a bet and plan the turn**.
+
 ## Practice Table
 
-- **Coached table.** Play heads-up against Mira for 100 play chips per seat. Blinds are 1 and 2. Mira uses a local equity and pot-odds heuristic. The optional coach samples 400 deals before the river and counts all 990 possible opposing hands on the river. Both calculations assume a uniformly random opponent hand. After the hand, review any decision with just the information available when it was made.
+- **Coached table.** Play heads-up against Mira for 100 play chips per seat. Blinds are 1 and 2. Mira uses a local equity and pot-odds heuristic. The optional coach samples 400 deals before the river and counts all 990 possible opposing hands on the river. Both calculations assume a uniformly random opponent hand. After the hand, review any decision with just the information available when it was made. A decision facing a bet offers a fresh call-price drill. A turn decision also offers a winning-rivers drill. Return to the selected decision afterward. A completed hand and its review can resume after a reload in the same browser tab.
 - **River bluff lab.** A single river bet offers a precisely solvable decision. Compare an equilibrium opponent with one that bluffs more or less often. The explanation derives the bluff frequency and shows the chip value of calling under each assumption.
 - **Play Slumbot.** Load Eric Jackson’s independently hosted heads-up table on request. Slumbot handles its own deals and decisions. The local coach and replay belong to Mira’s table. [Slumbot](https://slumbot.com/)
 
@@ -37,16 +41,15 @@ Open `index.html` directly or serve the repository root with a static web server
 
 ## Roadmap
 
-The first four milestones below have playable releases. The next step is a beginner pilot. Ask learners to complete the lessons without coaching, then return on a different day and try a fresh draw, a call-price decision and the no-trump ending. Record the first action, their explanation, any hint or retry, and where navigation interrupts the task. Use those observations to revise the explanations and assessment hands.
+| Milestone | Available in the course |
+| --- | --- |
+| Foundations to Intermediate | [From one hand to a range](https://koloios.github.io/table-study/#hidden-hand) keeps the board and price fixed while changing what is known about Mira’s hand. A fresh checkpoint leads into the weighted-range unit. |
+| Preflop strategy | [Choose a preflop line](https://koloios.github.io/table-study/#preflop) compares the same suited connectors in the cutoff, on the button and facing a raise. Decisions use four seats, 100-big-blind stacks and explicit opponent assumptions. |
+| Hand review to targeted practice | [Coached table](https://koloios.github.io/table-study/#table) reviews offer drills based on the street and cost of the selected decision. The exercise uses a separate exposed deal. |
 
-| Release | What the learner can do | How to check it |
-| --- | --- | --- |
-| Foundations assessment and usability | Apply the rules to unfamiliar hands, return to a saved lesson and finish with a keyboard. | Test distinct hand families, record first attempts separately from assisted completions, verify reload and simultaneous tabs, and observe new players finishing without prompting. |
-| Intermediate Hold’em I | Infer how the betting changes likely holdings, remove blocked combinations and compare a weighted range with the price of a call. | Use unseen hands where the same cards and price lead to different decisions after changing the range. Check the math by enumeration. |
-| Intermediate Hold’em II | Choose a size using position, stack depth and board texture, then plan a later street. | Collect the action and reasoning before revealing the runout. Accept defensible alternatives and show the assumptions behind each comparison. |
-| Bridge Foundations pilot | Follow suit, play as declarer with dummy and count winners in a short no-trump deal. | Have a beginner finish a fresh deal and explain the lead and winner of each trick. |
+**Release checks for one maintainer.** GitHub Actions runs `node --test tests/*.cjs` on pull requests and pushes to main. The tests enumerate legal rivers, exercise lesson navigation and reloads, and check that practice reviews only show information available at the selected decision. Play the changed path with a keyboard before releasing. The core site runs on static GitHub Pages.
 
-Jev and Laya are possible future opponents. Evaluate a candidate on the same deals as the local opponent, swap seats, and measure decision quality, response time, memory or API cost, and what learners gain before adding another engine.
+**Later options.** Expand Bridge from short endings to a guided no-trump deal. Evaluate Jev or Laya as a separate experiment using identical deals and swapped seats. Compare decision quality, response time, memory and hosting cost against the current opponent before committing to an integration.
 
 ## Design references
 

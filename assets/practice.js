@@ -63,7 +63,7 @@ const Practice = (() => {
     const wager=3+variant, starting=(Math.floor(seed/4)%2===0?2:7)*wager;
     const quote=Poker.callPrice(starting,wager,wins/44);
     if(skill==='pot')return question('Mira puts in '+wager+' after a starting pot of '+starting+'. If you match her all-in, what is the final pot?',numeric(quote.finalPot,[starting,starting+wager]),quote.finalPot,starting+' + '+wager+' + '+wager+' = '+quote.finalPot+'.','Include both players’ new contributions.');
-    if(skill==='price')return question('You win '+wins+' of 44 rivers. Mira bets '+wager+' all-in into '+starting+'. Which action earns more on average?',['Call','Fold'],quote.ev>0?'Call':'Fold','Your win chance is '+Course.pct(wins/44)+'. The price needs '+Course.pct(quote.breakEven)+'.','Divide your call by the final pot.');
+    if(skill==='price')return question('You win '+wins+' of 44 rivers. Mira bets '+wager+' all-in into '+starting+'. Which action earns more on average?',['Call','Fold'],quote.ev>0?'Call':'Fold','Your win chance is '+wins+' ÷ 44 ≈ '+Course.pct(wins/44)+'. The final pot is '+starting+' + '+wager+' + '+wager+' = '+quote.finalPot+'. Calling needs '+wager+' ÷ '+quote.finalPot+' ≈ '+Course.pct(quote.breakEven)+'.','Divide your call by the final pot.');
     const trials=44*(variant+2), expected=wins*trials/44;
     if(skill==='count')return question('With '+wins+' winning rivers out of 44, how many wins would you expect across '+trials+' independent trials?',numeric(expected,[expected+wins,expected-2]),expected,trials+' × '+wins+'/44 = '+expected+' expected wins.','Multiply sample size by the chance per trial.');
     const streak=variant+2;

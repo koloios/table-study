@@ -20,7 +20,7 @@ const context = vm.createContext({
   localStorage: {getItem: key => records.get(key) ?? null, setItem: (key, value) => records.set(key,value)}
 });
 context.window.localStorage=context.localStorage;
-for (const name of ['poker', 'card-notes', 'lessons', 'practice', 'progress', 'course']) {
+for (const name of ['poker', 'card-notes', 'lessons', 'practice', 'progress', 'intermediate', 'strategy', 'course']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../assets', name + '.js'), 'utf8'), context);
 }
 function click(action, value = '') {
@@ -117,7 +117,7 @@ vm.runInContext(boot,oldEntry);
 const recovered=new URL(cachedLocation.href);
 assert.equal(recovered.hash,'#rivers/play');
 assert.equal(recovered.searchParams.get('mode'),'practice');
-assert.equal(recovered.searchParams.get('edition'),'river-practice');
+assert.equal(recovered.searchParams.get('edition'),'strategy-1');
 vm.runInContext(boot,oldEntry);
 assert.match(cachedApp.textContent,/Refresh/);
 // The reverse mix can also occur: a cached launcher opens a newer module.
@@ -126,3 +126,52 @@ vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets/intermediate.js')
 vm.runInContext("Intermediate.mount(document.querySelector('#app'),'ranges')",oldEntry);
 assert.equal(new URL(cachedLocation.href).searchParams.get('edition'),'river-practice');
 assert.equal(new URL(cachedLocation.href).hash,'#intermediate/ranges');
+
+const strategy=vm.runInContext('Strategy',context);
+const evaluateDeal=vm.runInContext('Poker.rivers',context);
+for(const unit of strategy.units){
+  context.location.hash='#'+unit.id;
+  changeRoute();
+  const checkpoint=load('lesson.'+unit.id);
+  const steps=unit.build(checkpoint.seed);
+  for(const [index,step] of steps.entries()){
+    assert(app.innerHTML.includes(step.title));
+    if(step.choices){
+      assert(!app.innerHTML.includes(step.explain));
+      if(step.checkpoint && !step.visual.hiddenOpponent){
+        click('answer',step.choices.find(a=>a!==step.answer));
+        assertAwaiting('answer');
+      }
+      click('answer',step.answer);
+      assert(app.innerHTML.includes('data-action="next"'));
+    }
+    click('next');
+    assert.equal(load('lesson.'+unit.id).at,index+1);
+    changeRoute();
+  }
+  assert(app.innerHTML.includes('href="'+unit.onward+'"'));
+  assert.equal(load('lesson.'+unit.id).done,true);
+}
+assert.deepEqual(load('lesson.rivers'),completed);
+for(let seed=0;seed<4;seed++){
+  const steps=strategy.units[0].build(seed);
+  for(let i=0;i<steps.length;i+=2){
+    const [shown,hidden]=steps.slice(i,i+2);
+    const known=shown.visual.deal;
+    assert.deepEqual(known,hidden.visual.deal);
+    const cards=hidden.body.match(/(?:[2-9TJQKA][♣♠♦♥])/g);
+    assert.deepEqual(Array.from(known.opp),cards.slice(0,2));
+    const counts=[known.opp,cards.slice(2,4)].map(opp=>{
+      const runouts=evaluateDeal({...known,opp});
+      assert.equal(runouts.length,44);
+      assert(runouts.every(out=>out.result!==0));
+      return runouts.filter(out=>out.result===1).length;
+    });
+    const win=(counts[0]+3*counts[1])/(4*44);
+    assert(hidden.explain.includes(course.pct(win)));
+    const cost=i===0?3:10, pot=i===0?12:16;
+    assert.equal(hidden.answer,win*(pot+2*cost)>cost?'Call':'Fold');
+    assert.notEqual(shown.answer,hidden.answer);
+  }
+}
+console.log('Strategy comparisons, checkpoints, resume and onward routes passed.');
