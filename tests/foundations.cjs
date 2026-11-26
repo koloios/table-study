@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const context = vm.createContext({});
-for (const file of ['poker.js', 'lessons.js', 'practice.js']) {
+for (const file of ['poker.js', 'flop-lesson.js', 'lessons.js', 'practice.js']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../assets', file), 'utf8'), context);
 }
 const poker = vm.runInContext('Poker', context);
@@ -28,7 +28,7 @@ for (let seed = 0; seed < 60; seed++) {
       if (!deal) continue;
       const visible = [...deal.you, ...deal.opp, ...deal.board];
       assert.equal(new Set(visible).size, visible.length);
-      if (deal.board.length === 4) {
+      if (deal.board.length === 4 && !step.visual.hiddenOpponent) {
         const outcomes = course.outcomes(deal);
         const winners = outcomes.filter(o => o.result > 0);
         const suit = deal.you[0][1];

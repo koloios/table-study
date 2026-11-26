@@ -12,7 +12,7 @@ function openTable(){
   const app={querySelector:()=>root};
   let timer;
   const box=vm.createContext({document:{},sessionStorage,setTimeout:fn=>timer=fn,clearTimeout:()=>{timer=null;}});
-  for(const file of ['poker','heads-up','lessons','practice','card-notes','practice-table']){
+  for(const file of ['poker','heads-up','flop-lesson', 'lessons','practice','card-notes','practice-table']){
     vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',file+'.js'),'utf8'),box);
   }
   // Control only the opponent for this scenario. The real engine processes every move.

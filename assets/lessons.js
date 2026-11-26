@@ -140,6 +140,7 @@ const Course = (() => {
     {id:'seats',title:'Take your seat',goal:'Follow the blinds, the button and the action.',build:seats},
     {id:'showdown',title:'Read a showdown',goal:'Pick the best five and award the pot.',build:showdowns},
     {id:'rivers',title:'Count the rivers',goal:'Find your outs and explain the denominator.',build:draws},
+    ...(typeof FlopLesson==='undefined'?[]:[FlopLesson]),
     {id:'price',title:'Price a call',goal:'Use the final pot to choose between calling and folding.',build:pricing},
     {id:'sample',title:'Test a prediction',goal:'Compare a river sample with its calculated probability.',build:samples},
     {id:'review',title:'Play the review hand',goal:'Play through the hand and defend a fresh decision.',build:review}

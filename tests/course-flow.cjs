@@ -20,7 +20,7 @@ const context = vm.createContext({
   localStorage: {getItem: key => records.get(key) ?? null, setItem: (key, value) => records.set(key,value)}
 });
 context.window.localStorage=context.localStorage;
-for (const name of ['poker', 'card-notes', 'lessons', 'practice', 'progress', 'intermediate', 'strategy', 'course']) {
+for (const name of ['poker', 'card-notes', 'flop-lesson', 'lessons', 'practice', 'progress', 'intermediate', 'strategy', 'capstone', 'course']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../assets', name + '.js'), 'utf8'), context);
 }
 function click(action, value = '') {
@@ -117,7 +117,7 @@ vm.runInContext(boot,oldEntry);
 const recovered=new URL(cachedLocation.href);
 assert.equal(recovered.hash,'#rivers/play');
 assert.equal(recovered.searchParams.get('mode'),'practice');
-assert.equal(recovered.searchParams.get('edition'),'strategy-1');
+assert.equal(recovered.searchParams.get('edition'),'flop-capstone');
 vm.runInContext(boot,oldEntry);
 assert.match(cachedApp.textContent,/Refresh/);
 // The reverse mix can also occur: a cached launcher opens a newer module.
@@ -175,3 +175,44 @@ for(let seed=0;seed<4;seed++){
   }
 }
 console.log('Strategy comparisons, checkpoints, resume and onward routes passed.');
+
+// Returning learners keep all six original completions and are directed to the new unit.
+for(const u of course.units.filter(u=>u.id!=='flop-odds')){
+  records.set('table-study.foundations.v2.lesson.'+u.id,JSON.stringify({seed:12,at:u.build(12).length,done:true}));
+}
+context.location.hash='#holdem';
+changeRoute();
+assert.match(app.innerHTML,/6 of 7 lessons complete/);
+assert.match(app.innerHTML,/class="btn main" href="#flop-odds"/);
+for(const id of ['capstone','preflop','hidden-hand','intermediate/ranges','intermediate/streets']){
+  assert(app.innerHTML.includes('href="#'+id+'"'));
+}
+context.location.hash='#flop-odds';
+changeRoute();
+const flopUnit=course.units.find(u=>u.id==='flop-odds');
+for(const step of flopUnit.build(load('lesson.flop-odds').seed)){
+  assert(!app.innerHTML.includes('Count the two-card runouts'));
+  if(step.checkpoint)click('answer',step.choices.find(choice=>choice!==step.answer));
+  click('answer',step.answer);
+  if(step.showDrawPathsAfterAnswer){
+    assert.match(app.innerHTML,/Count the two-card runouts/);
+    assert.match(app.innerHTML,/414 \+ 342/);
+  }
+  click('next');
+  changeRoute();
+}
+assert.match(app.innerHTML,/href="#price"/);
+context.location.hash='#holdem';
+changeRoute();
+assert.match(app.innerHTML,/7 of 7 lessons complete/);
+assert.match(app.innerHTML,/class="btn main" href="#capstone"/);
+assert.equal(load('lesson.price').seed,12);
+
+assert.match(app.innerHTML,/href="#practice\/horizon"/);
+const retrySeed=load('skill.horizon').seed;
+context.location.hash='#practice/horizon';
+changeRoute();
+click('answer',flopUnit.build(retrySeed).at(-1).answer);
+context.location.hash='#holdem';
+changeRoute();
+assert(!app.innerHTML.includes('href="#practice/horizon"'));

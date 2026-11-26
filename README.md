@@ -2,24 +2,25 @@
 
 [Course library](https://koloios.github.io/table-study/) · [Play Hold’em Foundations](https://koloios.github.io/table-study/#holdem) · [Practice Table](https://koloios.github.io/table-study/#table) · [Bridge Foundations pilot](https://koloios.github.io/table-study/#bridge)
 
-A self-paced browser course for someone sitting down to Texas Hold’em for the first time. The first release teaches four-handed, play-chip Hold’em through a rotating table, showdowns, one-card draws, and decisions with a fixed all-in price. Basic arithmetic is introduced where a player needs it.
+A self-paced browser course for someone sitting down to Texas Hold’em for the first time. Learn four-handed, play-chip Hold’em through a rotating table, showdowns and decisions about the price of seeing another card. Basic arithmetic is introduced where a player needs it.
 
 ## Hold’em Foundations
 
-Start with [Take your seat](https://koloios.github.io/table-study/#seats) and follow the six lessons below in order. In the first lesson, focus on who acts next and what it costs to stay in the hand. Probability starts in lesson 3, once you can tell which hand wins. At the end of a lesson, try the fresh hand before opening a hint. If a step is confusing, read the feedback and try again.
+Start with [Take your seat](https://koloios.github.io/table-study/#seats) and follow the seven lessons below in order. In the first lesson, focus on who acts next and what it costs to stay in the hand. Probability starts in lesson 3, once you can tell which hand wins. At the end of a lesson, try the fresh hand before opening a hint. If a step is confusing, read the feedback and try again.
 
 | Lesson | Guided task | Variation and independent checkpoint |
 | --- | --- | --- |
 | 1. Take your seat | Locate the button and blinds. Follow the first player before and after the flop. Practise shuffling, cutting, burning and dealing with a physical deck. | Follow a four-hand orbit. Find the first player on a fresh hand, skip a folded seat, and calculate the cost of calling from a blind. |
 | 2. Read a showdown | Build the best five cards from seven and use kickers to settle equal pairs. | Change the board so both players share the best hand. Award a fresh pot and select a valid best five. |
 | 3. Count the rivers | Swap an exposed ace, count the remaining hearts, and inspect the 44 possible rivers. | Solve a fresh draw and explain an unseen burn. Then [play the turn hand](https://koloios.github.io/table-study/#rivers/play), call or fold, and compare your winning rivers with the price. |
-| 4. Price a call | Compare two all-in prices on the same board. Work from chips owed to final pot, break-even frequency, and average chip gain. | Compute the final pot and choose an action for a new price and pot without the worked solution. |
-| 5. Test a prediction | Predict a count and draw independent batches from the same turn. Compare observed frequency against exact enumeration. | Explain a short losing streak and distinguish a fresh trial from drawing twice from one deck. |
-| 6. Play the review hand | Sit in the big blind and play a complete coached hand. Replay the river decision at another price. | Choose call or fold in two different pots, build the final pot, and explain why the bigger call can earn more. Revisit missed skills on a later day. |
+| 4. [One card or two?](https://koloios.github.io/table-study/#flop-odds) | Play the same flush draw against a flop bet with chips behind and a flop all-in. Count the chance to make the flush over the cards each call guarantees. | Update the count after a missed turn, compare a flush with a full house, and choose the right calculation for a fresh board. |
+| 5. Price a call | Compare two all-in prices on the same board. Work from chips owed to final pot, break-even frequency, and average chip gain. | Compute the final pot and choose an action for a new price and pot without the worked solution. |
+| 6. Test a prediction | Predict a count and draw independent batches from the same turn. Compare observed frequency against exact enumeration. | Explain a short losing streak and distinguish a fresh trial from drawing twice from one deck. |
+| 7. Play the review hand | Sit in the big blind and play a complete coached hand. Replay the river decision at another price. | Choose call or fold in two different pots, build the final pot, and explain why the bigger call can earn more. Revisit missed skills on a later day. |
 
-Each unit has a worked example before the independent task. Wrong answers explain the specific misconception. Checkpoints allow retries, and the course map separately records first-try answers and checkpoints completed after a retry. Existing completion records are preserved. Statistics concern the specified deal and assumptions: exposed holdings, a fair shuffle, no fees, and no further betting on an all-in. Browser progress stays on the device. Missed skills appear on the Hold’em course map with focused practice hands. A correct first attempt on a fresh practice hand clears the skill.
+Each unit has a worked example before the independent task. Wrong answers explain the specific misconception. Checkpoints allow retries, and the course map separately records first-try answers and checkpoints completed after a retry. Existing completion records are preserved. Each deal states which cards are exposed. Calculations assume a fair shuffle and no fees. When a lesson uses an opponent model, it gives the possible holdings and their weights. Browser progress stays on the device. Missed skills appear on the Hold’em course map with focused practice hands. A correct first attempt on a fresh practice hand clears the skill.
 
-After lesson 6, play a heads-up hand at the coached Practice Table. Try choosing an action before opening the coach, then review one decision. The [preflop strategy lesson](https://koloios.github.io/table-study/#preflop) revisits the opening round with a four-handed opponent model. For the transition to Intermediate, play [From one hand to a range](https://koloios.github.io/table-study/#hidden-hand), followed by **Read a weighted range** and **Size a bet and plan the turn**.
+After lesson 7, [play the four-handed capstone](https://koloios.github.io/table-study/#capstone). Act on the button, follow the price across streets, and review your choices using the cards and reads available at each decision. For open-ended heads-up play, visit the coached Practice Table. The [preflop strategy lesson](https://koloios.github.io/table-study/#preflop) revisits the opening round with a four-handed opponent model. For the transition to Intermediate, play [From one hand to a range](https://koloios.github.io/table-study/#hidden-hand), followed by **Read a weighted range** and **Size a bet and plan the turn**.
 
 ## Practice Table
 
@@ -43,6 +44,8 @@ Open `index.html` directly or serve the repository root with a static web server
 
 | Milestone | Available in the course |
 | --- | --- |
+| Draws across two streets | [One card or two?](https://koloios.github.io/table-study/#flop-odds) compares one guaranteed card with two and counts the ordered runouts. |
+| Four-handed capstone | [Play the capstone](https://koloios.github.io/table-study/#capstone) and review each decision from the same deal. |
 | Foundations to Intermediate | [From one hand to a range](https://koloios.github.io/table-study/#hidden-hand) keeps the board and price fixed while changing what is known about Mira’s hand. A fresh checkpoint leads into the weighted-range unit. |
 | Preflop strategy | [Choose a preflop line](https://koloios.github.io/table-study/#preflop) compares the same suited connectors in the cutoff, on the button and facing a raise. Decisions use four seats, 100-big-blind stacks and explicit opponent assumptions. |
 | Hand review to targeted practice | [Coached table](https://koloios.github.io/table-study/#table) reviews offer drills based on the street and cost of the selected decision. The exercise uses a separate exposed deal. |

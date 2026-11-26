@@ -4,13 +4,14 @@ const Practice = (() => {
   const skills = {
     order:'Find the next player', blind:'Read the blinds', cost:'Count the chips owed',
     best:'Read the best five', winner:'Award the pot', outs:'Count winning rivers',
-    unseen:'Count unseen cards', pot:'Build the final pot', price:'Price a call',
+    unseen:'Count unseen cards', horizon:'Choose one card or two', pot:'Build the final pot', price:'Price a call',
     count:'Predict a sample count', independent:'Reason about independent deals'
   };
   const byStep = {
     seats:[null,'order',null,'order','blind','order','order','order','order','cost'],
     showdown:[null,'best','winner','winner','best'],
     rivers:[null,'outs',null,'outs','outs','unseen'],
+    'flop-odds':['unseen','horizon','unseen','horizon','winner','horizon'],
     price:[null,'pot',null,'pot','price'],
     sample:['count',null,'independent','count','independent'],
     review:[null,'price','price','price']
@@ -19,6 +20,7 @@ const Practice = (() => {
   function numeric(n,values) {return [...new Set([n,...values])].sort((a,b)=>a-b).map(String);}
   function build(skill,seed) {
     const name=skills[skill], variant=seed%4;
+    if(skill==='horizon')return {...FlopLesson.build(seed).at(-1),title:name};
     const draw=Course.units.find(u=>u.id==='rivers').build(seed)[4];
     const visual=draw.visual;
     const wins=Number(draw.answer);

@@ -200,7 +200,8 @@ const Intermediate = (() => {
       const index = guided ? 0 : 1;
       const deal = (page==='ranges'?rangeDeals:streetDeals)[index];
       const task = page==='ranges'?rangeExercise(deal,guided):streetExercise(deal,guided);
-      const intro='<section class="intro"><a href="#intermediate">Intermediate Hold’em</a><h1>'+titles[page]+'</h1></section>';
+      const flopLink=page==='streets'?'<p><a href="#flop-odds">Revisit flop draw probabilities</a></p>':'';
+      const intro='<section class="intro"><a href="#intermediate">Intermediate Hold’em</a><h1>'+titles[page]+'</h1>'+flopLink+'</section>';
       if (record.stage===2) {
         root.innerHTML=intro+'<section class="paper"><h2>Lesson complete</h2><p>'+
           (record.clean?'You completed the independent hand on your first attempt without a hint.':'You completed the independent hand with practice.')+
