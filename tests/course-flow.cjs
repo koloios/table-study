@@ -20,7 +20,7 @@ const context = vm.createContext({
   localStorage: {getItem: key => records.get(key) ?? null, setItem: (key, value) => records.set(key,value)}
 });
 context.window.localStorage=context.localStorage;
-for (const name of ['poker', 'card-notes', 'flop-lesson', 'lessons', 'practice', 'progress', 'intermediate', 'strategy', 'capstone', 'course']) {
+for (const name of ['poker', 'card-notes', 'flop-lesson', 'lessons', 'practice', 'progress', 'intermediate', 'strategy', 'big-blind', 'capstone', 'course']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../assets', name + '.js'), 'utf8'), context);
 }
 function click(action, value = '') {
@@ -117,7 +117,7 @@ vm.runInContext(boot,oldEntry);
 const recovered=new URL(cachedLocation.href);
 assert.equal(recovered.hash,'#rivers/play');
 assert.equal(recovered.searchParams.get('mode'),'practice');
-assert.equal(recovered.searchParams.get('edition'),'flop-capstone');
+assert.equal(recovered.searchParams.get('edition'),'big-blind');
 vm.runInContext(boot,oldEntry);
 assert.match(cachedApp.textContent,/Refresh/);
 // The reverse mix can also occur: a cached launcher opens a newer module.
@@ -184,7 +184,7 @@ context.location.hash='#holdem';
 changeRoute();
 assert.match(app.innerHTML,/6 of 7 lessons complete/);
 assert.match(app.innerHTML,/class="btn main" href="#flop-odds"/);
-for(const id of ['capstone','preflop','hidden-hand','intermediate/ranges','intermediate/streets']){
+for(const id of ['capstone','capstone/big-blind','preflop','hidden-hand','intermediate/ranges','intermediate/streets']){
   assert(app.innerHTML.includes('href="#'+id+'"'));
 }
 context.location.hash='#flop-odds';
@@ -216,3 +216,31 @@ click('answer',flopUnit.build(retrySeed).at(-1).answer);
 context.location.hash='#holdem';
 changeRoute();
 assert(!app.innerHTML.includes('href="#practice/horizon"'));
+
+// The existing button record unlocks the next recommendation and stays intact
+// when a learner opens, answers and resumes the second hand from its own URL.
+const buttonKey='table-study.holdem-capstone.v1';
+const buttonRecord=JSON.stringify({seed:7,actions:['Sol','Fold']});
+records.set(buttonKey,buttonRecord);
+changeRoute();
+assert.match(app.innerHTML,/class="btn main" href="#capstone\/big-blind">Play the big-blind hand/);
+assert.match(app.innerHTML,/href="#capstone">Review the button hand/);
+const handlers={};
+const moduleRoot={innerHTML:'',addEventListener:(type,fn)=>{handlers[type]=fn;},querySelector:()=>({focus(){}})};
+app.firstElementChild=moduleRoot;
+context.location.hash='#capstone/big-blind';
+changeRoute();
+assert.match(context.document.title,/Defend the big blind/);
+assert.match(moduleRoot.innerHTML,/You<small>Big blind/);
+handlers.click({target:{closest:()=>({dataset:{cap:'choose-0'}})}});
+const afterFirst=moduleRoot.innerHTML;
+changeRoute();
+assert.equal(moduleRoot.innerHTML,afterFirst);
+context.location.hash='#holdem';
+changeRoute();
+assert.match(app.innerHTML,/class="btn main" href="#capstone\/big-blind">Resume the big-blind hand/);
+assert.equal(records.get(buttonKey),buttonRecord);
+context.location.hash='#capstone';
+changeRoute();
+assert.match(moduleRoot.innerHTML,/You folded/);
+assert.match(moduleRoot.innerHTML,/href="#capstone\/big-blind"/);

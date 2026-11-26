@@ -2,10 +2,10 @@
 (() => {
   const app=document.querySelector('#app');
   // A cached entry page can still request the pre-release script URLs.
-  if(typeof CardNotes==='undefined' || typeof CardNotes.name!=='function' || typeof Course==='undefined' || typeof Course.riverHand!=='function' || typeof Strategy==='undefined' || typeof Capstone==='undefined' || !Course.units.some(u=>u.id==='flop-odds')){
+  if(typeof CardNotes==='undefined' || typeof CardNotes.name!=='function' || typeof Course==='undefined' || typeof Course.riverHand!=='function' || typeof Strategy==='undefined' || typeof Capstone==='undefined' || typeof BigBlindHand==='undefined' || !Course.units.some(u=>u.id==='flop-odds')){
     const url=new URL(location.href);
-    if(url.searchParams.get('edition')!=='flop-capstone'){
-      url.searchParams.set('edition','flop-capstone');
+    if(url.searchParams.get('edition')!=='big-blind'){
+      url.searchParams.set('edition','big-blind');
       location.replace(url.href);
     } else app.textContent='The lesson files could not load. Refresh this page to try again.';
     return;
@@ -217,8 +217,15 @@
       const state=saved[u.id], attempts=attemptSummary(state);
       return '<li><a href="#'+u.id+'"><span class="num">0'+(i+1)+'</span><span><strong>'+u.title+'</strong><span class="desc">'+u.goal+'</span>'+(attempts?'<span class="desc">'+attempts+'</span>':'')+'</span><small>'+(state?.done?'Complete':state?.at?'Resume':'')+'</small></a></li>';
     }).join('');
-    const capstoneLabel={new:'Play',resume:'Resume',complete:'Review'}[Capstone.status()]+' the four-handed capstone';
-    const next=count===units.length?{id:'capstone',label:capstoneLabel}:{id:resume.id,label:(saved[resume.id]?.at?'Resume':'Start')+' · '+resume.title};
+    const capstones=[
+      {seat:'button',id:'capstone',name:'button hand'},
+      {seat:'big-blind',id:'capstone/big-blind',name:'big-blind hand'}
+    ].map(hand=>{
+      const status=Capstone.status(hand.seat);
+      return {...hand,status,label:{new:'Play',resume:'Resume',complete:'Review'}[status]+' the '+hand.name};
+    });
+    const nextHand=capstones.find(hand=>hand.status==='resume') || capstones.find(hand=>hand.status==='new') || capstones[0];
+    const next=count===units.length?nextHand:{id:resume.id,label:(saved[resume.id]?.at?'Resume':'Start')+' · '+resume.title};
     const strategyLinks=[
       ['preflop','Choose a preflop line'],['hidden-hand','From one hand to a range'],
       ['intermediate/ranges','Read a weighted range'],['intermediate/streets','Size a bet and plan the turn']
@@ -231,8 +238,8 @@
         <div class="gameLinks"><a class="btn main" href="#${next.id}">${next.label}</a></div>
         <details><summary>Practice with a real deck</summary><p>Use a 52-card deck to practise shuffling, cutting, dealing and burning cards.</p><a href="turn-study/index.html#dealer-practice">Open the dealer exercise</a></details>
       </div><section class="paper"><span class="over">Course map</span><h2>At the table</h2><p class="note">${count} of ${units.length} lessons complete · saved in this browser</p>
-        <ol class="map">${rows}</ol><h3>Put the lessons together</h3><p>Take the button and play one hand from the blinds to your final decision. Review each choice with the cards you could see at the time.</p>
-        <a class="btn" href="#capstone">${capstoneLabel}</a></section></div>
+        <ol class="map">${rows}</ol><h3>Put the lessons together</h3><p>Play two four-handed deals. On the button, you act last after the flop. In the big blind, count what you still owe and act before the button on the flop.</p>
+        <div class="actions">${capstones.map(hand=>'<a class="btn" href="#'+hand.id+'">'+hand.label+'</a>').join('')}</div></section></div>
       ${retryList()}<section class="paper strategy-map"><h2>Continue into strategy</h2><ol>${strategyLinks}</ol>
       <p><a href="#intermediate">Intermediate course overview</a> · <a href="#table">Play at the Practice Table</a></p></section>`;
     document.title='Table Study · Hold’em Foundations';
@@ -252,7 +259,7 @@
         '<div class="actions"><a class="btn main" href="#flop-odds">Next · One card or two?</a><a class="btn" href="#rivers/play">Play the turn hand</a>'+
         btn('Practise this lesson again','repeat')+'</div></section>';
     }
-    return '<div class="intro"><span class="over">Lesson complete</span><h1>'+unit.title+'</h1><p>'+unit.goal+'</p></div><div class="paper"><h2>'+(next?'Keep your seat':'Review your progress')+'</h2><p>'+(next?'Your progress is saved. The next lesson is '+next.title.toLowerCase()+'.':units.every(u=>saved[u.id]?.done)?'You’ve completed Hold’em Foundations. On another day, revisit the checkpoints and explain your decisions before revealing the feedback.':'You finished the review hand. The course map shows which other lessons are ready to practise.')+'</p>'+(summary?'<p class="calc">Independent checkpoints · '+summary+'</p>':'')+'<div class="actions">'+(next?'<a class="btn main" href="#'+next.id+'">Next · '+next.title+'</a>':'<a class="btn main" href="#capstone">Play the four-handed capstone</a> <a class="btn" href="#home">Course map</a>')+(unit.id==='seats'?'<a class="btn" href="#preflop">Practise preflop strategy</a>':'')+btn('Practise this lesson again','repeat')+'</div></div>';
+    return '<div class="intro"><span class="over">Lesson complete</span><h1>'+unit.title+'</h1><p>'+unit.goal+'</p></div><div class="paper"><h2>'+(next?'Keep your seat':'Review your progress')+'</h2><p>'+(next?'Your progress is saved. The next lesson is '+next.title.toLowerCase()+'.':units.every(u=>saved[u.id]?.done)?'You’ve completed Hold’em Foundations. On another day, revisit the checkpoints and explain your decisions before revealing the feedback.':'You finished the review hand. The course map shows which other lessons are ready to practise.')+'</p>'+(summary?'<p class="calc">Independent checkpoints · '+summary+'</p>':'')+'<div class="actions">'+(next?'<a class="btn main" href="#'+next.id+'">Next · '+next.title+'</a>':'<a class="btn main" href="#capstone">Play the button hand</a> <a class="btn" href="#home">Course map</a>')+(unit.id==='seats'?'<a class="btn" href="#preflop">Practise preflop strategy</a>':'')+btn('Practise this lesson again','repeat')+'</div></div>';
   }
   function renderRiverHand() {
     const state=record('river-hand',saved.rivers?saved.rivers.seed+1:undefined);
@@ -331,10 +338,9 @@
     nav.textContent=unit?'Course map':'Courses';nav.href=unit?'#holdem':'#library';
     if(!unit){
       if(['table','table/river','table/slumbot'].includes(page)) PracticeTable.mount(app,page,card);
-      else if(page==='capstone'){
+      else if(page==='capstone' || page==='capstone/big-blind'){
         nav.textContent='Course map';nav.href='#holdem';
-        document.title='Four-handed capstone · Table Study';
-        app.innerHTML='<div class="course-module"></div>';Capstone.mount(app.firstElementChild);
+        app.innerHTML='<div class="course-module"></div>';Capstone.mount(app.firstElementChild,page==='capstone'?'button':'big-blind');
       }
       else if(page==='bridge/play'){
         nav.textContent='Bridge Foundations';nav.href='#bridge';
@@ -484,7 +490,7 @@
   });
   window.addEventListener('storage',e=>{
     if(!syncProgress(e.key) && ['#holdem','#home'].includes(location.hash) &&
-       (!e.key || e.key==='table-study.holdem-capstone.v1' || e.key.startsWith('table-study.intermediate.')))home();
+       (!e.key || e.key.startsWith('table-study.holdem-capstone.') || e.key.startsWith('table-study.intermediate.')))home();
   });
   window.addEventListener('hashchange',()=>{route();focusHeading('h1');window.scrollTo(0,0);});route();
 })();

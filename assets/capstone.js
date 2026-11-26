@@ -1,8 +1,7 @@
 'use strict';
 
-// A scripted four-seat hand. Only the action log and deal seed need to be saved.
+// Each four-seat hand saves its own action log and seed.
 const Capstone = (() => {
-  const key = 'table-study.holdem-capstone.v1';
   const seedCount = 4 * 2 * 2 * 44;
   const seatNames = ['Mira', 'Sol', 'You', 'Ivo'];
   const roles = ['Big blind', 'Cutoff', 'Button', 'Small blind'];
@@ -75,9 +74,10 @@ const Capstone = (() => {
 
   function settle(seed, deal, index, action) {
     if (action === 'Fold') {
-      const folded = [...decision(deal,index).folded,'You'];
+      const view = decision(deal,index);
+      const folded = [...view.folded,'You'];
       const net = index===1?0:index===3?-6:-12;
-      return {title:'You folded', net, folded, detail:index===4?
+      return {title:'You folded', net, folded, pot:index===4?30:view.pot, detail:index===4?
         'Mira takes the 30-chip pot and keeps her uncalled bet. Her cards stay face down.':
         'Your hand is over. The remaining players still have action. Their cards stay face down.'};
     }
@@ -108,22 +108,34 @@ const Capstone = (() => {
     return {view, result, history};
   }
 
-  function readRecord() {
+  const buttonHand = {
+    key:'table-study.holdem-capstone.v1', title:'Play from the button', roles, decisionCount:5, resume
+  };
+  function handFor(seat) {
+    if (seat==='big-blind') return {...BigBlindHand,key:'table-study.holdem-capstone.big-blind.v1',title:'Defend the big blind'};
+    return buttonHand;
+  }
+
+  function readRecord(key) {
     try { return localStorage.getItem(key); } catch { return null; }
   }
 
-  function load(raw) {
+  function load(raw, hand) {
     try {
       const saved = JSON.parse(raw);
-      if (saved && resume(saved.seed,saved.actions)) return saved;
+      if (saved) {
+        const state = hand.resume(saved.seed,saved.actions);
+        if (state) return {saved,state};
+      }
     } catch {}
     return null;
   }
 
-  function status() {
-    const saved = load(readRecord());
-    if (!saved) return 'new';
-    return saved.actions.at(-1)==='Fold' || saved.actions.length===5?'complete':'resume';
+  function status(seat='button') {
+    const hand = handFor(seat);
+    const record = load(readRecord(hand.key),hand);
+    if (!record) return 'new';
+    return record.state.result?'complete':'resume';
   }
 
   function faces(hand) {
@@ -131,13 +143,13 @@ const Capstone = (() => {
       '" role="img" aria-label="'+CardNotes.name(card)+'">'+(card[0]==='T'?'10':card[0])+'<span>'+card[1]+'</span></span>').join('')+'</div>';
   }
 
-  function felt(view, result) {
+  function felt(view, result, roles) {
     const folded = result?.folded || view.folded;
     const seats = seatNames.map((name,i)=>'<div class="seat s'+i+(name==='You'?' me':'')+(folded.includes(name)?' fold':'')+'">'+name+
       '<small>'+(folded.includes(name)?'Folded':roles[i])+'</small></div>').join('');
     const showdown = Boolean(result?.opp);
     const board = result?.board || view.board;
-    const pot = result?.pot ?? (result && view.street==='Turn'?30:view.pot);
+    const pot = result?.pot ?? view.pot;
     return '<section class="felt" aria-label="Four-handed table"><div class="row"><span class="over">'+(showdown?'Showdown':view.street)+
       '</span><span class="badge">Pot · '+pot+'</span></div><div class="oval">'+seats+
       '<div class="center"><span class="big" aria-hidden="true">♠</span>Blinds 1 / 2</div></div>'+
@@ -145,27 +157,28 @@ const Capstone = (() => {
       (showdown?'<small>Mira’s cards</small>'+faces(result.opp):'')+'</section>';
   }
 
-  function mount(root) {
-    document.title = 'Play a four-handed hand · Table Study';
-    let previousRecord = readRecord();
-    let saved = load(previousRecord) || {seed:freshSeed(),actions:[]};
+  function mount(root, seat='button') {
+    const hand = handFor(seat);
+    document.title = hand.title+' · Table Study';
+    let previousRecord = readRecord(hand.key);
+    let saved = load(previousRecord,hand)?.saved || {seed:freshSeed(),actions:[]};
     let review = null;
     function save() {
       const raw = JSON.stringify(saved);
-      try {localStorage.setItem(key,raw);previousRecord=raw;} catch {}
+      try {localStorage.setItem(hand.key,raw);previousRecord=raw;} catch {}
     }
     function anotherTabChangedHand() {
-      const raw = readRecord();
+      const raw = readRecord(hand.key);
       if (raw===previousRecord) return false;
       previousRecord=raw;
-      saved=load(raw) || {seed:freshSeed(),actions:[]};
+      saved=load(raw,hand)?.saved || {seed:freshSeed(),actions:[]};
       review=null;
       render(true);
       return true;
     }
     const button = (label,action,main=false)=>'<button type="button" class="btn'+(main?' main':'')+'" data-cap="'+action+'">'+label+'</button>';
     function render(focus=false) {
-      const state = resume(saved.seed,saved.actions);
+      const state = hand.resume(saved.seed,saved.actions);
       const frame = review===null?null:state.history[review];
       const view = frame?.view || state.view;
       let panel;
@@ -177,17 +190,17 @@ const Capstone = (() => {
       } else if (state.result) {
         const result = state.result;
         panel='<span class="over">Hand complete</span><h2 tabindex="-1">'+result.title+'</h2><p>'+CardNotes.text(result.detail)+
-          '</p><p>Net change for the hand: '+(result.net>0?'+':'')+result.net+' chips.</p><p class="calc">'+CardNotes.text(state.history.at(-1).explanation)+
-          '</p><div class="actions">'+button('Review a decision','review',true)+button('Deal a fresh hand','again')+'<a class="btn" href="#table">Practice Table</a></div>';
+          '</p><p>Net change for the hand · '+(result.net>0?'+':'')+result.net+' chips.</p><p class="calc">'+CardNotes.text(state.history.at(-1).explanation)+
+          '</p><div class="actions">'+button('Review a decision','review',true)+button('Deal a fresh hand','again')+(seat==='button'?'<a class="btn" href="#capstone/big-blind">Next · Defend the big blind</a>':'')+'<a class="btn" href="#table">Play at the Practice Table</a></div>';
       } else {
         const previous = state.history.at(-1);
-        panel='<span class="over">Decision '+(state.history.length+1)+' of 5</span><h2 tabindex="-1">'+view.title+'</h2>'+
+        panel='<span class="over">Decision '+(state.history.length+1)+' of '+hand.decisionCount+'</span><h2 tabindex="-1">'+view.title+'</h2>'+
           (previous?'<p class="calc">'+CardNotes.text(previous.explanation)+'</p>':'')+'<p>'+CardNotes.text(view.context)+'</p><p>'+CardNotes.text(view.prompt)+'</p>'+
-          (view.hint?'<details><summary>Hint</summary><p>'+view.hint+'</p></details>':'')+
+          (view.hint?'<details><summary>Hint</summary><p>'+CardNotes.text(view.hint)+'</p></details>':'')+
           '<div class="actions">'+view.options.map((label,i)=>button(label,'choose-'+i)).join('')+'</div>';
       }
-      root.innerHTML='<section class="intro"><span class="over">Texas Hold’em / Capstone</span><h1 tabindex="-1">Play a four-handed hand</h1></section>'+
-        '<div class="grid">'+felt(view,frame?null:state.result)+'<section class="panel decision-panel">'+panel+'</section></div>';
+      root.innerHTML='<section class="intro"><span class="over">Texas Hold’em / Capstone</span><h1 tabindex="-1">'+hand.title+'</h1></section>'+
+        '<div class="grid">'+felt(view,frame?null:state.result,hand.roles)+'<section class="panel decision-panel">'+panel+'</section></div>';
       if (focus) root.querySelector(focus==='review'?'[data-cap-review]':focus==='start'?'h1':'h2')?.focus();
     }
 
@@ -195,10 +208,10 @@ const Capstone = (() => {
       const target = event.target.closest('button[data-cap]');
       if (!target || anotherTabChangedHand()) return;
       const action = target.dataset.cap;
-      const state = resume(saved.seed,saved.actions);
+      const state = hand.resume(saved.seed,saved.actions);
       if (action==='again' && state.result) {
         const seed = freshSeed();
-        // Match a new runout with the other turn price on every replay.
+        // Keep the two bet sizes alternating on replays.
         saved={seed:(seed & ~4) | ((saved.seed ^ 4) & 4),actions:[]};
         review=null;save();render('start');return;
       }
