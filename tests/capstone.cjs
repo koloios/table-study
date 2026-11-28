@@ -12,7 +12,7 @@ const box = vm.createContext({
     setItem:(key,v)=>storage.set(key,v)
   }
 });
-for (const name of ['poker','card-notes','capstone']) {
+for (const name of ['poker','card-notes','big-blind','capstone']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',name+'.js'),'utf8'),box);
 }
 const cap = vm.runInContext('Capstone',box);
@@ -61,10 +61,10 @@ for(let rotation=0;rotation<4;rotation++){
   }
 }
 
-function mount(){
+function mount(seat='button'){
   const handlers={},focus=[];
   const root={innerHTML:'',addEventListener:(type,fn)=>handlers[type]=fn,querySelector:selector=>({focus(){focus.push(selector);}})};
-  cap.mount(root);
+  cap.mount(root,seat);
   function click(action){handlers.click({target:{closest:()=>({dataset:{cap:action}})}});}
   function review(index){handlers.change({target:{matches:()=>true,value:String(index)}});}
   return {root,click,review,focus};
@@ -128,3 +128,30 @@ route=mount();
 assert.match(route.root.innerHTML,/Who is first to act/);
 assert.doesNotMatch(route.root.innerHTML,/<img>/);
 console.log('Four-seat sequence, pot accounting, sampled showdowns, review privacy and persistence passed.');
+
+const blindKey='table-study.holdem-capstone.big-blind.v1';
+function blindResult(actions) {
+  storage.set(blindKey,JSON.stringify({seed:4,actions}));
+  return mount('big-blind');
+}
+const missed=blindResult(['6 more','Fold']);
+assert.match(missed.root.innerHTML,/Cost to call · Missed/);
+assert.match(missed.root.innerHTML,/First flop seat · Unseen/);
+assert.match(missed.root.innerHTML,/Practise · Cost to call/);
+assert.equal(cap.status('big-blind'),'complete');
+missed.click('practice');
+assert.match(missed.root.innerHTML,/Fresh practice hand/);
+assert.doesNotMatch(missed.root.innerHTML,/Four-handed table/);
+missed.click('drill-0');
+assert.match(missed.root.innerHTML,/Try again/);
+missed.click('drill-1');
+assert.match(missed.root.innerHTML,/Correct\./);
+missed.click('result');
+assert.match(missed.root.innerHTML,/Cost to call · Missed · Practised/);
+assert.match(mount('big-blind').root.innerHTML,/Practise · First flop seat/);
+const right=blindResult(['4 more','Fold']);
+assert.match(right.root.innerHTML,/Cost to call · Correct/);
+assert.match(right.root.innerHTML,/Practise · First flop seat/);
+const full=blindResult(['4 more','Call 4','You','Check or bet','Call 4','See the river for free','Fold']);
+assert.equal((full.root.innerHTML.match(/ · Correct/g)||[]).length,4);
+assert.doesNotMatch(full.root.innerHTML,/data-cap="practice"/);

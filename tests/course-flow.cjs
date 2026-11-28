@@ -244,3 +244,27 @@ context.location.hash='#capstone';
 changeRoute();
 assert.match(moduleRoot.innerHTML,/You folded/);
 assert.match(moduleRoot.innerHTML,/href="#capstone\/big-blind"/);
+
+// Follow the course map through two finished hands, fresh strategy work,
+// an in-progress unit, and finally free practice.
+const primaryLink=(id,label)=>{
+  assert(app.innerHTML.includes('<a class="btn main" href="#'+id+'">'+label+'</a>'));
+};
+const bigBlindKey='table-study.holdem-capstone.big-blind.v1';
+records.set(bigBlindKey,JSON.stringify({seed:3,actions:['4 more','Fold']}));
+for(const id of ['preflop','hidden-hand'])records.delete('table-study.foundations.v2.lesson.'+id);
+context.location.hash='#holdem';changeRoute();
+primaryLink('preflop','Start · Choose a preflop line');
+const rangeKey='table-study.intermediate.ranges.v1';
+records.set(rangeKey,JSON.stringify({stage:1,clean:true}));
+changeRoute();primaryLink('intermediate/ranges','Resume · Read a weighted range');
+for(const lesson of strategy.units){
+  records.set('table-study.foundations.v2.lesson.'+lesson.id,JSON.stringify({seed:0,at:lesson.build(0).length,done:true}));
+}
+records.set(rangeKey,JSON.stringify({stage:2,clean:true}));
+changeRoute();primaryLink('intermediate/streets','Start · Size a bet and plan the turn');
+records.set('table-study.intermediate.streets.v1',JSON.stringify({stage:2,clean:true}));
+changeRoute();primaryLink('table','Play at the Practice Table');
+context.location.hash='#preflop';changeRoute();
+primaryLink('hidden-hand','From one hand to a range');
+assert.match(app.innerHTML,/href="#table">Play at the Practice Table/);

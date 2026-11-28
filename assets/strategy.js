@@ -73,7 +73,7 @@ const Strategy = (() => {
 
   const units=[
     {id:'hidden-hand',title:'From one hand to a range',goal:'Price the same call when Mira’s cards go face down.',build:hiddenHands,onward:'#intermediate/ranges',nextTitle:'Read a weighted range'},
-    {id:'preflop',title:'Choose a preflop line',goal:'Choose an opening or a response at a four-handed table.',build:preflop,onward:'#table',nextTitle:'Play at the Practice Table'}
+    {id:'preflop',title:'Choose a preflop line',goal:'Choose an opening or a response at a four-handed table.',build:preflop,onward:'#hidden-hand',nextTitle:'From one hand to a range'}
   ];
   return {units};
 })();

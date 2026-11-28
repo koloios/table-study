@@ -63,5 +63,20 @@ const CourseProgress = (() => {
     refresh();
     return {saved,store,refresh};
   }
-  return {open};
+  // Serialize changes from two tabs when the browser grants access to Web Locks.
+  function withLock(key, action) {
+    let started=false;
+    const run=()=>{started=true;return action();};
+    function denied(error) {
+      if (!started && ['SecurityError','NotAllowedError'].includes(error?.name)) return run();
+      throw error;
+    }
+    try {
+      const locks=globalThis.navigator?.locks;
+      return locks ? locks.request(key,run).catch(denied) : run();
+    } catch (error) {
+      return denied(error);
+    }
+  }
+  return {open,withLock};
 })();

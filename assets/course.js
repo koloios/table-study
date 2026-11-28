@@ -224,15 +224,23 @@
       const status=Capstone.status(hand.seat);
       return {...hand,status,label:{new:'Play',resume:'Resume',complete:'Review'}[status]+' the '+hand.name};
     });
-    const nextHand=capstones.find(hand=>hand.status==='resume') || capstones.find(hand=>hand.status==='new') || capstones[0];
-    const next=count===units.length?nextHand:{id:resume.id,label:(saved[resume.id]?.at?'Resume':'Start')+' · '+resume.title};
-    const strategyLinks=[
+    const strategyLessons=[
       ['preflop','Choose a preflop line'],['hidden-hand','From one hand to a range'],
       ['intermediate/ranges','Read a weighted range'],['intermediate/streets','Size a bet and plan the turn']
     ].map(([id,title])=>{
-      const stage=id.includes('/')?Intermediate.status(id.split('/')[1]).stage:saved[id]?.done?2:saved[id]?.at?1:0;
-      return '<li><a href="#'+id+'">'+title+'</a>'+(stage?'<small> · '+(stage===2?'Complete':'Resume')+'</small>':'')+'</li>';
-    }).join('');
+      const stage=id.startsWith('intermediate/')?Intermediate.status(id.split('/')[1]).stage:
+        saved[id]?.done?2:saved[id]?.at?1:0;
+      return {id,title,stage,label:(stage===1?'Resume':'Start')+' · '+title};
+    });
+    const strategyLinks=strategyLessons.map(({id,title,stage})=>
+      '<li><a href="#'+id+'">'+title+'</a>'+(stage?'<small> · '+(stage===2?'Complete':'Resume')+'</small>':'')+'</li>'
+    ).join('');
+    let next={id:resume.id,label:(saved[resume.id]?.at?'Resume':'Start')+' · '+resume.title};
+    if(count===units.length){
+      next=capstones.find(hand=>hand.status==='resume') || capstones.find(hand=>hand.status==='new') ||
+        strategyLessons.find(lesson=>lesson.stage===1) || strategyLessons.find(lesson=>lesson.stage===0) ||
+        {id:'table',label:'Play at the Practice Table'};
+    }
     app.innerHTML=`<section class="intro"><span class="over">Self-paced course</span><h1>Hold’em Foundations</h1><p>Take a seat, play through a hand, and learn how to decide whether a call is worth its price.</p></section>
       <div class="grid"><div>${table({street:'Your first table',button:0,pot:3})}
         <div class="gameLinks"><a class="btn main" href="#${next.id}">${next.label}</a></div>
@@ -250,7 +258,7 @@
     if(unit.onward){
       return '<div class="intro"><span class="over">Lesson complete</span><h1>'+unit.title+'</h1></div><section class="paper"><p>'+unit.goal+'</p>'+
         (summary?'<p class="calc">Independent checkpoints · '+summary+'</p>':'')+
-        '<div class="actions"><a class="btn main" href="'+unit.onward+'">'+unit.nextTitle+'</a>'+btn('Replay this lesson','repeat')+'</div></section>';
+        '<div class="actions"><a class="btn main" href="'+unit.onward+'">'+unit.nextTitle+'</a>'+(unit.id==='preflop'?'<a class="btn" href="#table">Play at the Practice Table</a>':'')+btn('Replay this lesson','repeat')+'</div></section>';
     }
     if(unit.id==='rivers'){
       return '<div class="intro"><span class="over">Lesson complete</span><h1>Count the rivers</h1></div>'+

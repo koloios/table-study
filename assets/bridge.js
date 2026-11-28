@@ -84,33 +84,43 @@ const Bridge = (() => {
   }
 
   const storageKey = 'table-study.bridge-pilot.v1';
-  const initial = () => ({phase:'opening', seed:0, actions:[], guidedComplete:false, checkpointComplete:false});
+  const initial = () => ({phase:'opening', seed:0, attempt:0, actions:[], guidedComplete:false, checkpointComplete:false});
 
-  function readProgress() {
+  function decodeProgress(raw) {
     try {
-      const p = JSON.parse(localStorage.getItem(storageKey));
+      const p = JSON.parse(raw);
       if (p && ['opening','guided','fresh'].includes(p.phase) && Number.isSafeInteger(p.seed) &&
           p.seed >= 0 && Array.isArray(p.actions) && p.actions.length <= 12 &&
           typeof p.guidedComplete === 'boolean' && typeof p.checkpointComplete === 'boolean' &&
-          (p.phase === 'fresh' ? p.seed > 0 : p.seed === 0) && resume(p.seed,p.actions)) return p;
+          (p.phase === 'fresh' ? p.seed > 0 : p.seed === 0) && resume(p.seed,p.actions)) {
+        return {...p,attempt:Number.isSafeInteger(p.attempt) && p.attempt>=0 ? p.attempt : 0};
+      }
     } catch {}
     return initial();
   }
 
   function mount(root) {
     document.title = 'Play a no-trump ending · Table Study';
-    const progress = readProgress();
+    function readRaw() {
+      try { return localStorage.getItem(storageKey); } catch { return null; }
+    }
+    let previous = readRaw();
+    let progress = decodeProgress(previous);
+    let persistent = true;
     let state = resume(progress.seed, progress.actions);
     let note = '';
     let pickedWinner = '';
 
     function save() {
-      try { localStorage.setItem(storageKey, JSON.stringify(progress)); } catch {}
+      if (!persistent) return;
+      const raw = JSON.stringify(progress);
+      try { localStorage.setItem(storageKey,raw);previous=raw; } catch { persistent=false; }
     }
 
     function start(phase) {
       pickedWinner = '';
       progress.phase = phase;
+      progress.attempt++;
       progress.seed = phase === 'fresh' ? (progress.seed ? progress.seed % 3 + 1 : 1 + Math.floor(Math.random() * 3)) : 0;
       progress.actions = [];
       state = createEnding(progress.seed);
@@ -206,6 +216,24 @@ const Bridge = (() => {
     root.addEventListener('click', event => {
       const b = event.target.closest('button');
       if (!b) return;
+      const apply = () => {
+        if (b.isConnected===false) return;
+        const latest = persistent ? readRaw() : previous;
+        if (latest!==previous) {
+          previous=latest;
+          progress=decodeProgress(latest);
+          state=resume(progress.seed,progress.actions);
+          pickedWinner='';
+          note='This hand was updated in another tab. Continue from the current trick.';
+          render(true);
+          return;
+        }
+        handleChoice(b);
+      };
+      if (typeof CourseProgress!=='undefined' && CourseProgress.withLock) return CourseProgress.withLock(storageKey,apply);
+      apply();
+    });
+    function handleChoice(b) {
       const action = b.dataset.bridge;
       if (b.dataset.card) {
         const card = b.dataset.card;
@@ -215,6 +243,7 @@ const Bridge = (() => {
         else feedback('South declares. From South, move one seat clockwise to find the opening leader.');
       } else if (action === 'fresh') start('fresh');
       else if (action === 'replay') {
+        progress.attempt++;
         progress.actions = []; state = createEnding(progress.seed); note=''; save(); render(true);
       } else if (state.trick.length === 4) {
         const w = winner(state.trick);
@@ -228,7 +257,7 @@ const Bridge = (() => {
           commit('collect',w+' won with the '+cardName(high)+'.'+(state.finished.length===2?' That was the final trick.':' '+w+' has the next lead.'));
         } else feedback('Check the led suit and find its highest card. The seat that played it leads next.');
       }
-    });
+    }
     render(false);
   }
 

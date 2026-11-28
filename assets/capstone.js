@@ -138,6 +138,56 @@ const Capstone = (() => {
     return record.state.result?'complete':'resume';
   }
 
+  // Knowledge checks have a single answer. Playing or folding a hand is a separate choice.
+  const checks = {
+    button:[
+      {step:0,id:'first',label:'First preflop seat',answer:'Sol'},
+      {step:2,id:'draw',label:'One-card flush chance',answer:'9 of 47 · 19.1%'}
+    ],
+    'big-blind':[
+      {step:0,id:'cost',label:'Cost to call',answer:'4 more'},
+      {step:2,id:'position',label:'First flop seat',answer:'You'},
+      {step:3,id:'check',label:'Action after a check',answer:'Check or bet'},
+      {step:5,id:'street',label:'Closing the betting round',answer:'See the river for free'}
+    ]
+  };
+
+  function knowledge(seat,saved) {
+    return checks[seat].map(check=>{
+      const action=saved.actions[check.step];
+      const status=action===undefined?'Unseen':action===check.answer?'Correct':'Missed';
+      return {...check,status,practised:Array.isArray(saved.practised) && saved.practised.includes(check.id)};
+    });
+  }
+
+  function recommendedSkill(skills) {
+    return skills.find(k=>k.status==='Missed' && !k.practised) || skills.find(k=>k.status==='Unseen' && !k.practised);
+  }
+
+  function freshQuestion(id,seed) {
+    const dealer=seed%4, small=(dealer+1)%4, big=(dealer+2)%4;
+    const seatList='Clockwise around the table sit Mira, Sol, you and Ivo. '+seatNames[dealer]+' '+(dealer===2?'have':'has')+' the button.';
+    if(id==='cost'){
+      const total=[8,10,12,14][dealer],due=total-2;
+      return {prompt:'In a new hand you post the 2-chip big blind. The button raises to '+total+'. How many more chips would match the raise?',
+        choices:[String(total),String(due),String(total+2)],answer:String(due),why:total+' − 2 = '+due+' more chips.'};
+    }
+    if(id==='first' || id==='position'){
+      const preflop=id==='first', answer=seatNames[preflop?(big+1)%4:small];
+      return {prompt:seatList+(preflop?' All four players are in. Who acts first before the flop?':' The small blind called and all four players see the flop. Who acts first?'),
+        choices:seatNames,answer,why:preflop?'Start one seat clockwise from the big blind.':'Start one seat clockwise from the button and skip folded players.'};
+    }
+    if(id==='draw'){
+      const holding=['Q♣ J♣ on A♣ 3♣ 8♦','K♦ 8♦ on J♦ 4♦ 7♠'][seed%2];
+      return {prompt:'You hold '+holding+'. Everyone else’s cards are hidden. Under a fair shuffle with no reads, what is the chance you complete a flush on the turn?',
+        choices:['9 / 46','9 / 47','8 / 47'],answer:'9 / 47',why:'Four cards of your suit are visible. Nine remain among the 47 unseen cards.'};
+    }
+    if(id==='check')return {prompt:'You check to the button in a heads-up pot of '+(12+2*dealer)+'. How many chips must the button add to see the turn if they check behind?',
+      choices:['0','2','Half the pot'],answer:'0',why:'With no bet to match, a second check closes the round for free.'};
+    return {prompt:'Heads-up on the flop with '+(12+2*dealer)+' in the pot, both players check. What happens next?',
+      choices:['Deal the turn','Deal the river','Award the pot'],answer:'Deal the turn',why:'Both players checked, so the flop betting is complete. The next card is the turn.'};
+  }
+
   function faces(hand) {
     return '<div class="cards">'+hand.map(card=>'<span class="card '+('♥♦'.includes(card[1])?'red':'')+
       '" role="img" aria-label="'+CardNotes.name(card)+'">'+(card[0]==='T'?'10':card[0])+'<span>'+card[1]+'</span></span>').join('')+'</div>';
@@ -162,7 +212,7 @@ const Capstone = (() => {
     document.title = hand.title+' · Table Study';
     let previousRecord = readRecord(hand.key);
     let saved = load(previousRecord,hand)?.saved || {seed:freshSeed(),actions:[]};
-    let review = null;
+    let review = null, drill=null;
     function save() {
       const raw = JSON.stringify(saved);
       try {localStorage.setItem(hand.key,raw);previousRecord=raw;} catch {}
@@ -172,7 +222,7 @@ const Capstone = (() => {
       if (raw===previousRecord) return false;
       previousRecord=raw;
       saved=load(raw,hand)?.saved || {seed:freshSeed(),actions:[]};
-      review=null;
+      review=null;drill=null;
       render(true);
       return true;
     }
@@ -182,16 +232,25 @@ const Capstone = (() => {
       const frame = review===null?null:state.history[review];
       const view = frame?.view || state.view;
       let panel;
-      if (frame) {
+      if (drill) {
+        const q=drill.question, correct=drill.answer===q.answer;
+        panel='<span class="over">Fresh practice hand</span><h2 tabindex="-1">'+drill.label+'</h2><p>'+CardNotes.text(q.prompt)+'</p>'+
+          '<div class="actions">'+(correct?'':q.choices.map((c,i)=>button(c,'drill-'+i)).join(''))+'</div>'+
+          (drill.answer?'<p class="calc" role="status">'+(correct?'Correct. ':'Try again. ')+q.why+'</p>':'')+button('Back to hand result','result');
+      } else if (frame) {
         const options = state.history.map((entry,i)=>'<option value="'+i+'"'+(i===review?' selected':'')+'>'+entry.view.street+' · '+entry.view.title+'</option>').join('');
         panel='<span class="over">Decision review</span><h2 tabindex="-1">'+view.title+'</h2><label>Decision <select data-cap-review>'+options+
           '</select></label><p>'+CardNotes.text(view.context)+'</p><p>'+CardNotes.text(view.prompt)+'</p><p>You chose <strong>'+frame.action+
           '</strong>.</p><p class="calc">'+CardNotes.text(frame.explanation)+'</p>'+button('Back to result','result');
       } else if (state.result) {
         const result = state.result;
+        const skills=knowledge(seat,saved);
+        const target=recommendedSkill(skills);
+        const summary='<h3>Skills from this hand</h3><ul>'+skills.map(k=>'<li>'+k.label+' · '+k.status+(k.practised?' · Practised':'')+'</li>').join('')+'</ul>'+
+          (target?button('Practise · '+target.label,'practice',true):'');
         panel='<span class="over">Hand complete</span><h2 tabindex="-1">'+result.title+'</h2><p>'+CardNotes.text(result.detail)+
           '</p><p>Net change for the hand · '+(result.net>0?'+':'')+result.net+' chips.</p><p class="calc">'+CardNotes.text(state.history.at(-1).explanation)+
-          '</p><div class="actions">'+button('Review a decision','review',true)+button('Deal a fresh hand','again')+(seat==='button'?'<a class="btn" href="#capstone/big-blind">Next · Defend the big blind</a>':'')+'<a class="btn" href="#table">Play at the Practice Table</a></div>';
+          '</p>'+summary+'<div class="actions">'+button('Review a decision','review',!target)+button('Deal a fresh hand','again')+(seat==='button'?'<a class="btn" href="#capstone/big-blind">Next · Defend the big blind</a>':'<a class="btn" href="#holdem">Continue on the course map</a>')+'<a class="btn" href="#table">Play at the Practice Table</a></div>';
       } else {
         const previous = state.history.at(-1);
         panel='<span class="over">Decision '+(state.history.length+1)+' of '+hand.decisionCount+'</span><h2 tabindex="-1">'+view.title+'</h2>'+
@@ -200,7 +259,7 @@ const Capstone = (() => {
           '<div class="actions">'+view.options.map((label,i)=>button(label,'choose-'+i)).join('')+'</div>';
       }
       root.innerHTML='<section class="intro"><span class="over">Texas Hold’em / Capstone</span><h1 tabindex="-1">'+hand.title+'</h1></section>'+
-        '<div class="grid">'+felt(view,frame?null:state.result,hand.roles)+'<section class="panel decision-panel">'+panel+'</section></div>';
+        (drill?'<div>':'<div class="grid">'+felt(view,frame?null:state.result,hand.roles))+'<section class="panel decision-panel">'+panel+'</section></div>';
       if (focus) root.querySelector(focus==='review'?'[data-cap-review]':focus==='start'?'h1':'h2')?.focus();
     }
 
@@ -209,14 +268,30 @@ const Capstone = (() => {
       if (!target || anotherTabChangedHand()) return;
       const action = target.dataset.cap;
       const state = hand.resume(saved.seed,saved.actions);
+      if(action==='practice' && state.result){
+        const skills=knowledge(seat,saved);
+        const target=recommendedSkill(skills);
+        if(target){drill={...target,question:freshQuestion(target.id,freshSeed()),answer:null};render(true);}
+        return;
+      }
+      if(drill && /^drill-[0-3]$/.test(action)){
+        const answer=drill.question.choices[Number(action.slice(6))];
+        if(answer===undefined)return;
+        drill.answer=answer;
+        if(answer===drill.question.answer){
+          saved.practised=[...new Set([...(Array.isArray(saved.practised)?saved.practised:[]),drill.id])];
+          save();
+        }
+        render(true);return;
+      }
       if (action==='again' && state.result) {
         const seed = freshSeed();
         // Keep the two bet sizes alternating on replays.
         saved={seed:(seed & ~4) | ((saved.seed ^ 4) & 4),actions:[]};
-        review=null;save();render('start');return;
+        review=null;drill=null;save();render('start');return;
       }
       if (action==='review' && state.result) {review=state.history.length-1;render();root.querySelector('[data-cap-review]').focus();return;}
-      if (action==='result' && state.result) {review=null;render(true);return;}
+      if (action==='result' && state.result) {review=null;drill=null;render(true);return;}
       if (state.result || !/^choose-[0-9]+$/.test(action)) return;
       const selected = state.view.options[Number(action.slice(7))];
       if (!selected) return;

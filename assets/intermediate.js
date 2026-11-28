@@ -9,9 +9,9 @@ const Intermediate = (() => {
   ];
   const streetDeals = [
     {hero:['A♠','A♦'], board:['J♥','T♥','4♣'], range:[['K♥','Q♥'],['9♣','8♣'],['Q♣','J♣'],['J♦','9♦']],
-      turns:['2♠','9♥'], pot:20, stack:100, value:'one-pair jacks', threat:'K♥ Q♥ makes a straight flush. J♦ 9♦ makes two pair.'},
+      turns:['2♠','9♥'], pot:20, stack:100, largeFold:['J♦','9♦'], read:'For 15 she calls with an open-ended straight draw or a pair of jacks with at least a queen kicker.', value:'one-pair jacks', threat:'K♥ Q♥ makes a straight flush. J♦ 9♦ makes two pair.'},
     {hero:['A♠','9♠'], board:['9♣','8♣','3♥'], range:[['J♣','T♣'],['T♦','9♥'],['7♥','6♥'],['8♦','7♦']],
-      turns:['2♦','7♣'], pot:20, stack:36, value:'a nine with a weaker kicker and a pair of eights', threat:'J♣ 10♣ makes a straight flush. 8♦ 7♦ makes two pair.'}
+      turns:['2♦','7♣'], pot:20, stack:36, largeFold:['8♦','7♦'], read:'For 15 she calls with an open-ended straight draw or top pair. She folds a lone second pair.', value:'a nine with a weaker kicker and a pair of eights', threat:'J♣ 10♣ makes a straight flush. 8♦ 7♦ makes two pair.'}
   ];
   const titles = {ranges:'Read a weighted range', streets:'Size a bet and plan the turn'};
   const combinations = hand => hand.join(' ').replaceAll('T', '10');
@@ -58,11 +58,8 @@ const Intermediate = (() => {
   function status(page) {
     let record;
     try { record = JSON.parse(localStorage.getItem('table-study.intermediate.'+page+'.v1')); } catch {}
-    return {stage:[0,1,2].includes(record?.stage) ? record.stage : 0, clean:record?.clean !== false};
-  }
-
-  function write(page, record) {
-    try { localStorage.setItem('table-study.intermediate.'+page+'.v1', JSON.stringify(record)); } catch {}
+    return {stage:[0,1,2].includes(record?.stage) ? record.stage : 0, clean:record?.clean !== false,
+      attempt:Number.isSafeInteger(record?.attempt) && record.attempt>=0 ? record.attempt : 0};
   }
 
   function field(id, label, options) {
@@ -111,10 +108,28 @@ const Intermediate = (() => {
     show('bet');
   }
 
+  function blockerExercise(deal, offset) {
+    const visible = [...deal.hero, ...deal.board];
+    const impossible = deal.candidates.find(hand=>hand.some(card=>visible.includes(card)));
+    const blocker = impossible.find(card=>visible.includes(card));
+    const order = deal.candidates.map((_,i)=>deal.candidates[(i+offset)%deal.candidates.length]);
+    return {
+      scene:'<h3>Candidate hands</h3><p>'+order.map(CardNotes.hand).join(', ')+'</p>',
+      prompt:'Which card rules out a holding?',
+      body:field('blocked','Which hand is impossible?',order.map(hand=>[combinations(hand),combinations(hand)]))+
+        field('blocker','Which visible card rules it out?',visible.map(card=>[card,CardNotes.name(card)])),
+      hint:'A card can appear in only one place. Look for an exact rank and suit that occurs among the candidates and the visible cards.',
+      assess(data) {
+        if (data.get('blocked')!==combinations(impossible)) return 'Compare both cards in the holding with the cards you can see.';
+        if (data.get('blocker')!==blocker) return 'You found the holding. Which of its cards is already visible?';
+        return '';
+      }
+    };
+  }
+
   function rangeExercise(deal, guided) {
     const [bet, check] = [analyzeRange(deal,true),analyzeRange(deal,false)];
     const actions = [['call','Call'],['fold','Fold']];
-    const blockedOptions = [deal.candidates[2], deal.candidates[0], deal.candidates[1]];
     const formulas = '<p>For each possible holding, remove its two cards together with your two cards and the four on the board. Count your wins over 44 possible rivers.</p>'+
       '<ul>'+bet.rows.filter(r=>r.weight).map(r=>'<li>'+CardNotes.hand(r.hand)+' gives '+r.wins.length+' wins and '+r.ties.length+' ties. Winning rivers: '+CardNotes.hand(r.wins)+'.</li>').join('')+'</ul>';
     const forms = [true,false].map(flopBet => {
@@ -125,11 +140,9 @@ const Intermediate = (() => {
     }).join('');
     return {scene:rangeFacts(deal), prompt:'Which hands and histories matter?', body:
       '<p>Compare the same cards and price under two flop histories. Use the river counts below and enter your weighted chance to the nearest tenth of a percent.</p>'+
-      '<details><summary>Inspect the river counts</summary>'+formulas+'</details>'+
-      field('blocked','Which candidate is impossible?',blockedOptions.map(h=>[combinations(h),combinations(h)]))+forms,
+      '<details><summary>Inspect the river counts</summary>'+formulas+'</details>'+forms,
       hint:'Cross out a hand that uses a visible card. After a flop bet, weight the first available holding three times as heavily as the second. After a check, reverse the weights. Divide the call by the final pot to find the price.',
       assess(data) {
-        if (data.get('blocked')!==combinations(deal.candidates[2])) return 'A candidate includes a card in your hand or on the board. Remove that exact combination.';
         for (const [id,calc] of [['bet',bet],['check',check]]) {
           const history = id==='bet'?'flop bet':'flop check';
           if (Number(data.get(id+'Share')) !== roundedPercent(calc.equity))
@@ -181,6 +194,41 @@ const Intermediate = (() => {
       '<p>Weight each hand equally and count ties as half a win. Your showdown equity is '+pct(r.equity)+'. Future bets can change how much of the pot you actually win.</p></details>';
   }
 
+  function sizingBranch(deal, size) {
+    const callers = deal.range.filter(hand=>size===10 || combinations(hand)!==combinations(deal.largeFold));
+    return {callers, callChance:callers.length/deal.range.length,
+      calledPot:deal.pot+2*size, stack:deal.stack-size, awarded:deal.pot, refund:size};
+  }
+
+  function pricePrediction(deal) {
+    const options = [...deal.range].sort((a,b)=>combinations(a).localeCompare(combinations(b)));
+    return '<form class="intermediate-fields" data-price-prediction><h3>Replay this flop against a different opponent</h3>'+
+      '<p>The cards, stacks and starting pot are the same. This opponent starts with the same four equally likely holdings. She calls 10 with each one. '+deal.read+' She never raises in this exercise.</p>'+
+      field('smallCount','How many of the four hands call 10?', [1,2,3,4].map(n=>[n,String(n)]))+
+      '<fieldset><legend>Which hands still call 15? Choose every caller.</legend>'+
+      options.map(hand=>'<label><input type="checkbox" name="continues" value="'+combinations(hand)+'"> '+CardNotes.hand(hand)+'</label>').join('')+
+      '</fieldset><div role="status" class="feedback" data-error></div><button class="btn main" type="submit">Check my prediction</button></form>';
+  }
+
+  function checkPrediction(deal, data) {
+    if (data.get('smallCount')!=='4') return 'At the smaller price she calls with every starting hand. Count the holdings again.';
+    const picked = new Set(data.getAll('continues'));
+    const {callers} = sizingBranch(deal,15);
+    return picked.size===callers.length && callers.every(hand=>picked.has(combinations(hand)))?'':'Match each holding to the board. Keep the hands that meet her rule for a 15-chip bet.';
+  }
+
+  function priceReview(deal) {
+    return '<h3 tabindex="-1" data-price-review>How the price changes her range</h3>'+[10,15].map(size=>{
+      const branch=sizingBranch(deal,size);
+      const callCount=branch.callers.length;
+      const folded=callCount<deal.range.length;
+      return '<h4>Bet '+size+' into '+deal.pot+'</h4><p>'+callCount+' of '+deal.range.length+' holdings call ('+pct(branch.callChance)+'). '+
+        'After a call the pot is '+deal.pot+' + '+size+' + '+size+' = '+branch.calledPot+', with '+branch.stack+' chips behind each.</p>'+
+        (folded?'<p>With '+CardNotes.hand(deal.largeFold)+' she folds ('+pct(1-branch.callChance)+'). You win the '+branch.awarded+' already in the pot and get your uncalled '+branch.refund+' back. The hand ends here.</p>':'')+
+        '<p>When she calls, '+branch.callers.map(CardNotes.hand).join(', ')+' each account for 1/'+callCount+' of her calling hands ('+pct(1/callCount)+' each).</p>';
+    }).join('')+'<p>The smaller bet gets paid by one more weaker pair. The larger bet builds a bigger pot when called, against a narrower set of hands.</p>';
+  }
+
   function mount(root, page) {
     if (!Object.hasOwn(titles,page)) return;
     // An older cached course launcher can open this newer lesson directly.
@@ -192,52 +240,113 @@ const Intermediate = (() => {
       } else root.textContent='The lesson files could not load. Refresh this page to try again.';
       return;
     }
-    const record = status(page);
+    let record = status(page);
+    let persistent = true, renderVersion = 0;
+    const saveKey = 'table-study.intermediate.'+page+'.v1';
+    function save() {
+      if (!persistent) return;
+      try { localStorage.setItem(saveKey,JSON.stringify(record)); } catch { persistent=false; }
+    }
+    function guardProgress(action) {
+      const version = renderVersion;
+      function apply() {
+        if (version!==renderVersion || root.isConnected===false) return;
+        if (persistent) {
+          const latest = status(page);
+          if (latest.stage!==record.stage || latest.attempt!==record.attempt) {
+            record=latest;
+            accepted=false;
+            render();
+            return;
+          }
+          record.clean=record.clean && latest.clean;
+        }
+        action();
+      }
+      if (typeof CourseProgress!=='undefined' && CourseProgress.withLock) return CourseProgress.withLock(saveKey,apply);
+      return apply();
+    }
     const onward = page==='ranges' ? ['#intermediate/streets',titles.streets] : ['#table/river','Try the river bluff lab'];
     let accepted=false, chosenSize, turnIndex;
+    let blockerFound=false, predictionDone=false, lessonVisit;
     function render() {
+      renderVersion++;
+      const visit = (record.attempt || 0)+'/'+record.stage;
+      if (lessonVisit!==visit) {
+        lessonVisit=visit;
+        blockerFound=false;
+        predictionDone=false;
+      }
       const guided = record.stage===0;
       const index = guided ? 0 : 1;
       const deal = (page==='ranges'?rangeDeals:streetDeals)[index];
-      const task = page==='ranges'?rangeExercise(deal,guided):streetExercise(deal,guided);
+      const findingBlocker=page==='ranges' && !blockerFound;
+      const offset=((record.attempt || 0)+index)%3;
+      const task = findingBlocker?blockerExercise(deal,offset):page==='ranges'?rangeExercise(deal,guided):streetExercise(deal,guided);
       const flopLink=page==='streets'?'<p><a href="#flop-odds">Revisit flop draw probabilities</a></p>':'';
       const intro='<section class="intro"><a href="#intermediate">Intermediate Hold’em</a><h1>'+titles[page]+'</h1>'+flopLink+'</section>';
       if (record.stage===2) {
         root.innerHTML=intro+'<section class="paper"><h2>Lesson complete</h2><p>'+
           (record.clean?'You completed the independent hand on your first attempt without a hint.':'You completed the independent hand with practice.')+
           '</p><div class="actions"><a class="btn main" href="'+onward[0]+'">'+onward[1]+'</a><button class="btn" data-restart>Replay lesson</button></div></section>';
-        root.querySelector('[data-restart]').onclick=()=>{record.stage=0;record.clean=true;accepted=false;write(page,record);render();};
+        root.querySelector('[data-restart]').onclick=()=>guardProgress(()=>{
+          record={stage:0,clean:true,attempt:record.attempt+1};
+          accepted=false;save();render();
+        });
         return;
       }
       const feedback = accepted ? '<div class="feedback" tabindex="-1" data-feedback><strong>Decision review</strong>'+
         (page==='ranges'?task.review:streetReview(deal,chosenSize,turnIndex))+'</div>'+
         (page==='streets'?'<button type="button" class="btn" data-other>Compare the other turn</button> ':'')+
-        '<button class="btn main" data-next>'+(guided?'Try an independent hand':'Finish lesson')+'</button>' : '';
+        (page==='streets' && !predictionDone?pricePrediction(deal):
+          (page==='streets'?priceReview(deal):'')+'<button class="btn main" data-next>'+(guided?'Try an independent hand':'Finish lesson')+'</button>') : '';
       root.innerHTML=intro+'<div class="grid intermediate-grid"><section class="felt"><span class="over">'+(guided?'Guided hand':'Independent hand')+
         ' · '+(page==='ranges'?'Turn':'Flop')+'</span><h2>At the table</h2><small>Community cards</small>'+cards(deal.board)+
         '<small>Your hand</small>'+cards(deal.hero)+task.scene+
-        (page==='ranges'&&(guided||accepted)?'<section class="prob-study" data-holdings aria-label="Compare holdings"></section>':'')+
+        (page==='ranges'&&!findingBlocker&&(guided||accepted)?'<section class="prob-study" data-holdings aria-label="Compare holdings"></section>':'')+
         '</section><section class="panel decision-panel"><h2>'+task.prompt+'</h2>'+
         (accepted?feedback:'<form class="intermediate-fields">'+(task.guide?'<p>'+task.guide+'</p>':'')+task.body+
         '<details data-hint><summary>Hint</summary><p>'+task.hint+'</p></details><div class="feedback" role="status" data-error></div><div class="actions"><button class="btn main" type="submit">'+
-        (page==='ranges'?'Check my decisions':'Commit my plan and see the turn')+'</button></div></form>')+'</section></div>';
+        (findingBlocker?'Check the blocker':page==='ranges'?'Check my decisions':'Commit my plan and see the turn')+'</button></div></form>')+'</section></div>';
       const comparison=root.querySelector('[data-holdings]');
       if(comparison) mountHoldingComparison(comparison,deal);
+      const markAssisted = () => {if(!guided && record.clean){record.clean=false;save();}};
       if (accepted) {
-        root.querySelector('[data-next]').onclick=()=>{record.stage++;accepted=false;write(page,record);render();root.querySelector('h1').setAttribute('tabindex','-1');root.querySelector('h1').focus();};
+        if (page==='streets' && !predictionDone) {
+          root.querySelector('[data-price-prediction]').onsubmit=event=>{
+            event.preventDefault();
+            const data=new FormData(event.target);
+            return guardProgress(()=>{
+              const error=checkPrediction(deal,data);
+              if (error) {markAssisted();root.querySelector('[data-error]').textContent=error;return;}
+              predictionDone=true;render();root.querySelector('[data-price-review]').focus();
+            });
+          };
+        } else root.querySelector('[data-next]').onclick=()=>guardProgress(()=>{
+          record.stage++;accepted=false;save();render();
+          root.querySelector('h1').setAttribute('tabindex','-1');root.querySelector('h1').focus();
+        });
         const compare=root.querySelector('[data-other]');
         if (compare) compare.onclick=()=>{turnIndex=1-turnIndex;render();root.querySelector('[data-other]').focus();};
         return;
       }
-      const markAssisted = () => {if(!guided){record.clean=false;write(page,record);}};
-      root.querySelector('[data-hint]').ontoggle=event=>{if(event.currentTarget.open) markAssisted();};
+      root.querySelector('[data-hint]').ontoggle=event=>{if(event.currentTarget.open) guardProgress(markAssisted);};
       root.querySelector('form').onsubmit=event=>{
         event.preventDefault();
         const data=new FormData(event.target);
+        return guardProgress(()=>assessSubmission(data));
+      };
+      function assessSubmission(data) {
         const error=task.assess(data);
         if(error) {
           markAssisted();
           root.querySelector('[data-error]').textContent=error;
+          return;
+        }
+        if (findingBlocker) {
+          blockerFound=true;render();
+          const heading=root.querySelector('.decision-panel h2');
+          heading.setAttribute('tabindex','-1');heading.focus();
           return;
         }
         accepted=true;
@@ -245,11 +354,11 @@ const Intermediate = (() => {
         turnIndex=Math.random()<0.5 ? 0 : 1;
         render();
         root.querySelector('[data-feedback]').focus();
-      };
+      }
     }
     document.title=titles[page]+' · Table Study';
     render();
   }
 
-  return {mount,status,rangeDeals,streetDeals,analyzeRange,analyzeTurn,rangeExercise,streetExercise};
+  return {mount,status,rangeDeals,streetDeals,analyzeRange,analyzeTurn,rangeExercise,streetExercise,blockerExercise,sizingBranch};
 })();
